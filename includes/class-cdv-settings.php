@@ -50,7 +50,9 @@ final class Coywolf_CDV_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'model' => Coywolf_CDV_AI::DEFAULT_MODEL,
+			'model'        => Coywolf_CDV_AI::DEFAULT_MODEL,
+			'chart_bg'     => '#ffffff',
+			'chart_radius' => 0,
 		);
 	}
 
@@ -103,7 +105,29 @@ final class Coywolf_CDV_Settings {
 		if ( ! empty( $value['model'] ) && preg_match( '/^[a-z0-9._-]+$/i', (string) $value['model'] ) ) {
 			$out['model'] = (string) $value['model'];
 		}
+		// An empty color is intentional (cleared via the picker's clear
+		// button) and means a transparent chart background.
+		if ( isset( $value['chart_bg'] ) ) {
+			$hex             = sanitize_hex_color( (string) $value['chart_bg'] );
+			$out['chart_bg'] = $hex ? $hex : '';
+		}
+		if ( isset( $value['chart_radius'] ) ) {
+			$out['chart_radius'] = max( 0, min( 48, (int) $value['chart_radius'] ) );
+		}
 		return $out;
+	}
+
+	/**
+	 * Appearance values the chart render and the editor preview share.
+	 *
+	 * @return array { bg: string, radius: int }
+	 */
+	public function appearance() {
+		$settings = $this->get_settings();
+		return array(
+			'bg'     => (string) $settings['chart_bg'],
+			'radius' => (int) $settings['chart_radius'],
+		);
 	}
 
 	/**
@@ -201,6 +225,30 @@ final class Coywolf_CDV_Settings {
 								<?php endforeach; ?>
 							</select>
 							<p class="description"><?php esc_html_e( 'The Claude model used to analyze your data and design charts.', 'coywolf-data-visualizer' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Chart appearance', 'coywolf-data-visualizer' ); ?></h2>
+				<p><?php esc_html_e( 'Applied to every chart on your site.', 'coywolf-data-visualizer' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Background color', 'coywolf-data-visualizer' ); ?></th>
+						<td>
+							<p class="coywolf-cdv-color-field" data-key="chart_bg">
+								<input type="hidden" class="coywolf-cdv-color-value" name="<?php echo esc_attr( self::OPTION ); ?>[chart_bg]" value="<?php echo esc_attr( $settings['chart_bg'] ); ?>" />
+								<span class="coywolf-cdv-color-mount"></span>
+							</p>
+							<p class="description"><?php esc_html_e( 'Drawn behind every chart — keeps them readable on dark themes. Clear the color for a transparent background.', 'coywolf-data-visualizer' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="coywolf-cdv-chart-radius"><?php esc_html_e( 'Corner radius', 'coywolf-data-visualizer' ); ?></label>
+						</th>
+						<td>
+							<input type="number" min="0" max="48" step="1" id="coywolf-cdv-chart-radius" name="<?php echo esc_attr( self::OPTION ); ?>[chart_radius]" value="<?php echo (int) $settings['chart_radius']; ?>" class="small-text" /> px
+							<p class="description"><?php esc_html_e( 'Rounds the corners of the chart background.', 'coywolf-data-visualizer' ); ?></p>
 						</td>
 					</tr>
 				</table>

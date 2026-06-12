@@ -23,6 +23,7 @@ Saved charts are reusable: embed the same chart in any number of posts and pages
 - **Claude engine (optional, best results)** — add a Claude API key and Claude designs the charts from your data plus a plain-language explanation: smarter chart choices, intelligent aggregation, and written insight captions. Switch engines per analysis on the Add Chart screen.
 - **Live previews before saving** — every suggestion renders as a real Chart.js chart on the Add Chart screen, with editable titles and captions.
 - **Coywolf Chart block** — a searchable picker modal (type to filter, click to choose) embeds any saved chart. Per-block display settings: show/hide the title, caption, and legend, legend position, max width, and a fixed height.
+- **Site-wide chart appearance** — give every chart a background color (white by default, clearable to transparent) and rounded corners from Settings; the editor preview matches.
 - **All Charts screen** — a standard WordPress table with search, a chart-type filter, pagination, and bulk delete. Posts and Pages columns count where each chart is embedded and link to a filtered post list.
 - **Safe deletes** — deleting a chart also removes its block from every post and page that used it and updates those posts, so nothing renders broken embeds.
 - **Accessible rendering** — charts render in a `<figure>` with the caption in a `<figcaption>` and a descriptive `aria-label` on the canvas. The Chart.js config is emitted as data attributes; the plugin prints no inline scripts.
