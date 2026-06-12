@@ -4,7 +4,7 @@ Tags: charts, chart.js, data visualization, ai, claude
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,6 +81,9 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 == Changelog ==
+
+= 1.1.1 =
+* Built-in analyzer: pick the right category column in real-world exports (#3).
 
 = 1.1.0 =
 * Built-in chart analyzer: the plugin now works without a Claude API key. It profiles your columns (dates, numbers, categories) and designs time-series, category, share, top-10, radar, and correlation charts with captions computed from the data. The Claude engine is now optional — when a key is saved, choose either engine per analysis on the Add Chart screen.
