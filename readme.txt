@@ -4,7 +4,7 @@ Tags: charts, chart.js, data visualization, ai, claude
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,9 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 == Changelog ==
+
+= 1.2.1 =
+* Fix Edit Chart page: Sorry, you are not allowed to access this page (#6).
 
 = 1.2.0 =
 * Color schemes: nine palettes (Tableau 10, Okabe–Ito, ColorBrewer, D3 Category 10, and Coywolf originals) with a site default in Settings, applied non-destructively at render time.
