@@ -4,7 +4,7 @@
 
 Turn raw data into publish-ready charts without leaving WordPress. Upload a CSV, Excel, or JSON file and get a set of suggested [Chart.js](https://www.chartjs.org/) charts with titles and captions — designed instantly by the built-in analyzer, or by Claude when you connect an API key (optional, best results). Pick the ones you like, save them, and embed them in any post or page with the Coywolf Chart block.
 
-- **Version:** 1.2.1
+- **Version:** 1.3.0
 - **Requires WordPress:** 6.3+
 - **Requires PHP:** 7.4+
 - **License:** GPL-2.0-or-later
@@ -23,8 +23,8 @@ Saved charts are reusable: embed the same chart in any number of posts and pages
 - **Claude engine (optional, best results)** — add a Claude API key and Claude designs the charts from your data plus a plain-language explanation: smarter chart choices, intelligent aggregation, and written insight captions. Switch engines per analysis on the Add Chart screen.
 - **Live previews before saving** — every suggestion renders as a real Chart.js chart on the Add Chart screen, with editable titles and captions.
 - **Coywolf Chart block** — a searchable picker modal (type to filter, click to choose) embeds any saved chart. Per-block display settings: show/hide the title, caption, and legend, legend position, max width, and a fixed height.
-- **Color schemes** — nine palettes (Coywolf, Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer Set2/Dark2/Pastel, D3 Category 10, Ocean, Sunset). Pick a site default in Settings for new charts; switch any chart's scheme later without touching its data.
-- **Edit Chart screen** — click any chart name on All Charts to rename it, rewrite its caption, change its color scheme, switch compatible chart types (bar ↔ line, pie ↔ doughnut ↔ polar area), flip bars horizontal, stack datasets, start the value axis at zero, or hide grid lines — with a live preview, and every embed updates instantly.
+- **Color schemes** — nine bundled palettes (Coywolf, Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer Set2/Dark2/Pastel, D3 Category 10, Ocean, Sunset) plus your own: download any scheme as a .json file, tweak the colors, and upload it as a custom scheme. Pick a site default in Settings for new charts; switch any chart's scheme later without touching its data.
+- **Edit Chart screen** — click any chart name on All Charts to rename it, rewrite its caption, change its color scheme, switch compatible chart types (bar ↔ line, pie ↔ doughnut ↔ polar area), flip bars horizontal, stack datasets, start the value axis at zero, or hide grid lines — with a live preview. Update, Cancel, and Delete all return to All Charts, and deleting removes the chart's block from every post and page that used it.
 - **Site-wide chart appearance** — give every chart a background color (white by default, clearable to transparent) and rounded corners from Settings; the editor preview matches.
 - **All Charts screen** — a standard WordPress table with search, a chart-type filter, pagination, and bulk delete. Posts and Pages columns count where each chart is embedded and link to a filtered post list.
 - **Safe deletes** — deleting a chart also removes its block from every post and page that used it and updates those posts, so nothing renders broken embeds.
@@ -85,6 +85,11 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 ## Changelog
+
+### 1.3.0
+- Custom color schemes: download the selected scheme as a .json file from Settings, edit it, and upload it back as your own — custom schemes appear in every scheme picker and can be removed at any time (charts fall back to their original colors).
+- Edit Chart actions: Cancel and Delete buttons join Update Chart; all three return to All Charts, and Delete strips the chart's block from every post and page that embedded it.
+- All Charts: removed the ID from the row actions.
 
 ### 1.2.1
 - Fix Edit Chart page: Sorry, you are not allowed to access this page (#6).

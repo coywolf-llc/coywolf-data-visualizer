@@ -4,7 +4,7 @@ Tags: charts, chart.js, data visualization, ai, claude
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,8 +24,8 @@ Features:
 * Claude engine (optional, best results) — add a Claude API key and Claude designs the charts from your data plus a plain-language explanation: smarter chart choices, intelligent aggregation, and written insight captions. Switch engines per analysis on the Add Chart screen.
 * Live previews before saving — every suggestion renders as a real Chart.js chart on the Add Chart screen, with editable titles and captions.
 * Coywolf Chart block — a searchable picker modal embeds any saved chart, with per-block settings for the title, caption, legend, legend position, max width, and height.
-* Color schemes — nine palettes (Coywolf, Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer Set2/Dark2/Pastel, D3 Category 10, Ocean, Sunset). Pick a site default in Settings; switch any chart's scheme later without touching its data.
-* Edit Chart screen — click any chart name on All Charts to rename it, rewrite its caption, change its color scheme, switch compatible chart types, flip bars horizontal, stack datasets, start the value axis at zero, or hide grid lines — with a live preview.
+* Color schemes — nine bundled palettes (Coywolf, Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer Set2/Dark2/Pastel, D3 Category 10, Ocean, Sunset) plus your own: download any scheme as a .json file, tweak it, and upload it as a custom scheme. Pick a site default in Settings; switch any chart's scheme later without touching its data.
+* Edit Chart screen — click any chart name on All Charts to rename it, rewrite its caption, change its color scheme, switch compatible chart types, flip bars horizontal, stack datasets, start the value axis at zero, or hide grid lines — with a live preview. Update, Cancel, and Delete all return to All Charts, and deleting removes the chart's block from every post and page that used it.
 * Site-wide chart appearance — give every chart a background color (white by default, clearable to transparent) and rounded corners from Settings; the editor preview matches.
 * All Charts screen — a standard WordPress table with search, a chart-type filter, pagination, and bulk delete. Posts and Pages columns count where each chart is embedded and link to a filtered post list.
 * Safe deletes — deleting a chart also removes its block from every post and page that used it and updates those posts.
@@ -84,6 +84,11 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 == Changelog ==
+
+= 1.3.0 =
+* Custom color schemes: download the selected scheme as a .json file from Settings, edit it, and upload it back as your own — custom schemes appear in every scheme picker and can be removed at any time.
+* Edit Chart actions: Cancel and Delete buttons join Update Chart; all three return to All Charts, and Delete strips the chart's block from every post and page that embedded it.
+* All Charts: removed the ID from the row actions.
 
 = 1.2.1 =
 * Fix Edit Chart page: Sorry, you are not allowed to access this page (#6).

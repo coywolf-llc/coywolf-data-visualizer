@@ -80,5 +80,14 @@
 		}
 	}
 
+	var deleteButton = document.getElementById( 'coywolf-cdv-edit-delete' );
+	if ( deleteButton ) {
+		deleteButton.addEventListener( 'click', function ( event ) {
+			if ( ! window.confirm( data.deleteConfirm || 'Delete this chart? Its block will also be removed from every post and page that uses it.' ) ) {
+				event.preventDefault();
+			}
+		} );
+	}
+
 	render();
 } )();

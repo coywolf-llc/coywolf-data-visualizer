@@ -133,3 +133,40 @@
 	margin-top: 12px;
 	text-align: center;
 }
+
+/* Edit Chart action row: Update + Cancel left, Delete pushed far right. */
+.coywolf-cdv-edit-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.coywolf-cdv-edit-actions .coywolf-cdv-delete-button {
+	margin-left: auto;
+	color: #d63638;
+	border-color: #d63638;
+}
+
+.coywolf-cdv-edit-actions .coywolf-cdv-delete-button:hover,
+.coywolf-cdv-edit-actions .coywolf-cdv-delete-button:focus {
+	color: #fff;
+	background: #d63638;
+	border-color: #d63638;
+}
+
+/* Custom color schemes (Settings). */
+.coywolf-cdv-custom-schemes {
+	max-width: 640px;
+	margin-bottom: 16px;
+}
+
+.coywolf-cdv-scheme-upload {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.coywolf-cdv-scheme-upload .submit {
+	margin: 0;
+	padding: 0;
+}

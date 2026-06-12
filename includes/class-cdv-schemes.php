@@ -67,6 +67,15 @@ final class Coywolf_CDV_Schemes {
 	const DEFAULT_SCHEME = 'coywolf';
 
 	/**
+	 * Option storing user-uploaded schemes: key => { label, colors }.
+	 */
+	const CUSTOM_OPTION = 'coywolf_cdv_custom_schemes';
+
+	const CUSTOM_PREFIX     = 'custom-';
+	const MIN_CUSTOM_COLORS = 2;
+	const MAX_CUSTOM_COLORS = 24;
+
+	/**
 	 * Chart types drawn on x/y axes (the toggles only make sense there).
 	 *
 	 * @var string[]
@@ -84,13 +93,96 @@ final class Coywolf_CDV_Schemes {
 	);
 
 	/**
+	 * Built-in schemes merged with user-uploaded ones.
+	 *
+	 * @return array<string,array{label:string,colors:string[]}>
+	 */
+	public static function all() {
+		$all    = self::SCHEMES;
+		$custom = get_option( self::CUSTOM_OPTION, array() );
+		if ( is_array( $custom ) ) {
+			foreach ( $custom as $key => $scheme ) {
+				if ( is_string( $key ) && is_array( $scheme ) && ! empty( $scheme['colors'] ) && ! isset( $all[ $key ] ) ) {
+					$all[ $key ] = array(
+						'label'  => isset( $scheme['label'] ) ? (string) $scheme['label'] : $key,
+						'colors' => array_values( array_map( 'strval', (array) $scheme['colors'] ) ),
+					);
+				}
+			}
+		}
+		return $all;
+	}
+
+	/**
+	 * User-uploaded schemes only.
+	 *
+	 * @return array<string,array{label:string,colors:string[]}>
+	 */
+	public static function custom_schemes() {
+		$custom = get_option( self::CUSTOM_OPTION, array() );
+		return is_array( $custom ) ? $custom : array();
+	}
+
+	/**
+	 * Whether a scheme key exists (built-in or custom).
+	 *
+	 * @param string $key Scheme key.
+	 * @return bool
+	 */
+	public static function exists( $key ) {
+		$all = self::all();
+		return isset( $all[ (string) $key ] );
+	}
+
+	/**
+	 * Validate an uploaded scheme payload into a storable entry.
+	 *
+	 * @param mixed $name   Scheme name.
+	 * @param mixed $colors Color list.
+	 * @return array|WP_Error { key, label, colors }
+	 */
+	public static function sanitize_custom_scheme( $name, $colors ) {
+		$label = sanitize_text_field( (string) $name );
+		if ( '' === $label ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'The scheme file needs a "name".', 'coywolf-data-visualizer' ) );
+		}
+		$clean = array();
+		foreach ( (array) $colors as $color ) {
+			$hex = sanitize_hex_color( trim( (string) $color ) );
+			if ( $hex ) {
+				$clean[] = strtolower( $hex );
+			}
+		}
+		if ( count( $clean ) < self::MIN_CUSTOM_COLORS || count( $clean ) > self::MAX_CUSTOM_COLORS ) {
+			return new WP_Error(
+				'coywolf_cdv_scheme',
+				sprintf(
+					/* translators: 1: minimum colors, 2: maximum colors */
+					__( 'The scheme needs between %1$d and %2$d valid hex colors.', 'coywolf-data-visualizer' ),
+					self::MIN_CUSTOM_COLORS,
+					self::MAX_CUSTOM_COLORS
+				)
+			);
+		}
+		$key = self::CUSTOM_PREFIX . sanitize_key( str_replace( ' ', '-', $label ) );
+		if ( isset( self::SCHEMES[ $key ] ) || self::CUSTOM_PREFIX === $key ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'That scheme name is reserved — pick another.', 'coywolf-data-visualizer' ) );
+		}
+		return array(
+			'key'    => $key,
+			'label'  => $label,
+			'colors' => $clean,
+		);
+	}
+
+	/**
 	 * key => label for selects.
 	 *
 	 * @return array<string,string>
 	 */
 	public static function choices() {
 		$out = array();
-		foreach ( self::SCHEMES as $key => $scheme ) {
+		foreach ( self::all() as $key => $scheme ) {
 			$out[ $key ] = $scheme['label'];
 		}
 		return $out;
@@ -103,7 +195,8 @@ final class Coywolf_CDV_Schemes {
 	 * @return string[]
 	 */
 	public static function colors( $key ) {
-		return isset( self::SCHEMES[ $key ] ) ? self::SCHEMES[ $key ]['colors'] : array();
+		$all = self::all();
+		return isset( $all[ $key ] ) ? $all[ $key ]['colors'] : array();
 	}
 
 	/**
@@ -113,7 +206,7 @@ final class Coywolf_CDV_Schemes {
 	 */
 	public static function palettes() {
 		$out = array();
-		foreach ( self::SCHEMES as $key => $scheme ) {
+		foreach ( self::all() as $key => $scheme ) {
 			$out[ $key ] = $scheme['colors'];
 		}
 		return $out;
@@ -145,7 +238,7 @@ final class Coywolf_CDV_Schemes {
 	public static function default_display( array $config, $scheme = '' ) {
 		$index_axis = isset( $config['options']['indexAxis'] ) ? (string) $config['options']['indexAxis'] : 'x';
 		return array(
-			'scheme'        => isset( self::SCHEMES[ $scheme ] ) ? $scheme : '',
+			'scheme'        => self::exists( $scheme ) ? $scheme : '',
 			'horizontal'    => 'y' === $index_axis,
 			'stacked'       => false,
 			'begin_at_zero' => false,
@@ -164,7 +257,7 @@ final class Coywolf_CDV_Schemes {
 	public static function sanitize_display( $raw, array $config ) {
 		$raw = is_array( $raw ) ? $raw : array();
 		$out = self::default_display( $config );
-		if ( isset( $raw['scheme'] ) && isset( self::SCHEMES[ (string) $raw['scheme'] ] ) ) {
+		if ( isset( $raw['scheme'] ) && self::exists( (string) $raw['scheme'] ) ) {
 			$out['scheme'] = (string) $raw['scheme'];
 		} elseif ( isset( $raw['scheme'] ) && '' === (string) $raw['scheme'] ) {
 			$out['scheme'] = '';

@@ -32,7 +32,93 @@ final class Coywolf_CDV_Settings {
 	public function init() {
 		add_action( 'admin_init', array( $this, 'register' ) );
 		add_action( 'admin_post_coywolf_cdv_remove_api_key', array( $this, 'handle_remove_key' ) );
+		add_action( 'admin_post_coywolf_cdv_upload_scheme', array( $this, 'handle_upload_scheme' ) );
+		add_action( 'admin_post_coywolf_cdv_remove_scheme', array( $this, 'handle_remove_scheme' ) );
 		add_action( 'wp_ajax_coywolf_cdv_test_api', array( $this, 'ajax_test_api' ) );
+	}
+
+	/**
+	 * Handle a custom color-scheme JSON upload (admin-post, multipart).
+	 *
+	 * Expected file format — exactly what the Download button produces:
+	 * {"name": "My Brand", "colors": ["#123456", "#abcdef", ...]}
+	 */
+	public function handle_upload_scheme() {
+		if ( ! current_user_can( Coywolf_Data_Visualizer::CAPABILITY ) ) {
+			wp_die( esc_html__( 'You are not allowed to manage these settings.', 'coywolf-data-visualizer' ) );
+		}
+		check_admin_referer( 'coywolf_cdv_upload_scheme' );
+
+		$result = $this->read_scheme_upload();
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( add_query_arg( 'cdv-scheme-error', rawurlencode( $result->get_error_message() ), admin_url( 'admin.php?page=' . self::PAGE ) ) );
+			exit;
+		}
+
+		$custom                   = Coywolf_CDV_Schemes::custom_schemes();
+		$custom[ $result['key'] ] = array(
+			'label'  => $result['label'],
+			'colors' => $result['colors'],
+		);
+		update_option( Coywolf_CDV_Schemes::CUSTOM_OPTION, $custom, false );
+
+		wp_safe_redirect( add_query_arg( 'cdv-scheme-added', rawurlencode( $result['label'] ), admin_url( 'admin.php?page=' . self::PAGE ) ) );
+		exit;
+	}
+
+	/**
+	 * Parse and validate the uploaded scheme JSON file.
+	 *
+	 * @return array|WP_Error { key, label, colors }
+	 */
+	private function read_scheme_upload() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce checked by the caller.
+		$file = isset( $_FILES['scheme_file'] ) ? $_FILES['scheme_file'] : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- validated below.
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( ! is_array( $file ) || UPLOAD_ERR_OK !== (int) ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) || empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'Choose a scheme .json file to upload.', 'coywolf-data-visualizer' ) );
+		}
+		if ( (int) $file['size'] > 64 * KB_IN_BYTES ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'That file is too large to be a color scheme.', 'coywolf-data-visualizer' ) );
+		}
+		if ( 'json' !== strtolower( pathinfo( (string) ( $file['name'] ?? '' ), PATHINFO_EXTENSION ) ) ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'The scheme must be a .json file.', 'coywolf-data-visualizer' ) );
+		}
+
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		WP_Filesystem();
+		global $wp_filesystem;
+		$contents = $wp_filesystem ? $wp_filesystem->get_contents( $file['tmp_name'] ) : false;
+		$data     = is_string( $contents ) ? json_decode( $contents, true ) : null;
+		if ( ! is_array( $data ) ) {
+			return new WP_Error( 'coywolf_cdv_scheme', __( 'The file is not valid JSON.', 'coywolf-data-visualizer' ) );
+		}
+		return Coywolf_CDV_Schemes::sanitize_custom_scheme(
+			isset( $data['name'] ) ? $data['name'] : '',
+			isset( $data['colors'] ) ? $data['colors'] : array()
+		);
+	}
+
+	/**
+	 * Remove an uploaded scheme (admin-post). Charts and the site default
+	 * that referenced it fall back gracefully (original colors / Coywolf).
+	 */
+	public function handle_remove_scheme() {
+		if ( ! current_user_can( Coywolf_Data_Visualizer::CAPABILITY ) ) {
+			wp_die( esc_html__( 'You are not allowed to manage these settings.', 'coywolf-data-visualizer' ) );
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- verified by check_admin_referer below.
+		$key = isset( $_GET['scheme'] ) ? sanitize_text_field( wp_unslash( $_GET['scheme'] ) ) : '';
+		check_admin_referer( 'coywolf_cdv_remove_scheme_' . $key );
+
+		$custom = Coywolf_CDV_Schemes::custom_schemes();
+		unset( $custom[ $key ] );
+		update_option( Coywolf_CDV_Schemes::CUSTOM_OPTION, $custom, false );
+
+		wp_safe_redirect( add_query_arg( 'cdv-scheme-removed', '1', admin_url( 'admin.php?page=' . self::PAGE ) ) );
+		exit;
 	}
 
 	/**
@@ -115,7 +201,7 @@ final class Coywolf_CDV_Settings {
 		if ( isset( $value['chart_radius'] ) ) {
 			$out['chart_radius'] = max( 0, min( 48, (int) $value['chart_radius'] ) );
 		}
-		if ( isset( $value['default_scheme'] ) && array_key_exists( (string) $value['default_scheme'], Coywolf_CDV_Schemes::SCHEMES ) ) {
+		if ( isset( $value['default_scheme'] ) && Coywolf_CDV_Schemes::exists( (string) $value['default_scheme'] ) ) {
 			$out['default_scheme'] = (string) $value['default_scheme'];
 		}
 		return $out;
@@ -128,7 +214,7 @@ final class Coywolf_CDV_Settings {
 	 */
 	public function default_scheme() {
 		$settings = $this->get_settings();
-		return array_key_exists( (string) $settings['default_scheme'], Coywolf_CDV_Schemes::SCHEMES )
+		return Coywolf_CDV_Schemes::exists( (string) $settings['default_scheme'] )
 			? (string) $settings['default_scheme']
 			: Coywolf_CDV_Schemes::DEFAULT_SCHEME;
 	}
@@ -198,14 +284,32 @@ final class Coywolf_CDV_Settings {
 			}
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flag set by our redirect.
-		$key_removed = isset( $_GET['cdv-key-removed'] );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only flags set by our redirects.
+		$key_removed    = isset( $_GET['cdv-key-removed'] );
+		$scheme_added   = isset( $_GET['cdv-scheme-added'] ) ? sanitize_text_field( wp_unslash( $_GET['cdv-scheme-added'] ) ) : '';
+		$scheme_error   = isset( $_GET['cdv-scheme-error'] ) ? sanitize_text_field( wp_unslash( $_GET['cdv-scheme-error'] ) ) : '';
+		$scheme_removed = isset( $_GET['cdv-scheme-removed'] );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap coywolf-cdv-settings">
 			<h1><?php esc_html_e( 'Coywolf Data Visualizer Settings', 'coywolf-data-visualizer' ); ?></h1>
 
 			<?php if ( $key_removed ) : ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'API key removed.', 'coywolf-data-visualizer' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( '' !== $scheme_added ) : ?>
+				<div class="notice notice-success is-dismissible"><p>
+					<?php
+					/* translators: %s: scheme name */
+					printf( esc_html__( 'Color scheme "%s" added. It is now available everywhere schemes are picked.', 'coywolf-data-visualizer' ), esc_html( $scheme_added ) );
+					?>
+				</p></div>
+			<?php endif; ?>
+			<?php if ( '' !== $scheme_error ) : ?>
+				<div class="notice notice-error is-dismissible"><p><?php echo esc_html( $scheme_error ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( $scheme_removed ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Color scheme removed. Charts that used it show their original colors again.', 'coywolf-data-visualizer' ); ?></p></div>
 			<?php endif; ?>
 
 			<form method="post" action="options.php">
@@ -278,12 +382,53 @@ final class Coywolf_CDV_Settings {
 								<?php endforeach; ?>
 							</select>
 							<span class="coywolf-cdv-scheme-swatches"></span>
-							<p class="description"><?php esc_html_e( 'The palette applied to newly created charts. Each chart can switch to a different scheme on its Edit Chart screen. Palettes include Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer, and D3 Category 10.', 'coywolf-data-visualizer' ); ?></p>
+							<button type="button" class="button" id="coywolf-cdv-download-scheme"><?php esc_html_e( 'Download', 'coywolf-data-visualizer' ); ?></button>
+							<p class="description"><?php esc_html_e( 'The palette applied to newly created charts. Each chart can switch to a different scheme on its Edit Chart screen. Palettes include Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer, and D3 Category 10. Download exports the selected scheme as a .json file you can tweak and upload below.', 'coywolf-data-visualizer' ); ?></p>
 						</td>
 					</tr>
 				</table>
 
 				<?php submit_button(); ?>
+			</form>
+
+			<h2><?php esc_html_e( 'Custom color schemes', 'coywolf-data-visualizer' ); ?></h2>
+			<p><?php esc_html_e( 'Upload your own palette as a .json file — the same format the Download button produces: {"name": "My Brand", "colors": ["#123456", "#abcdef"]}. Uploaded schemes appear in every scheme picker.', 'coywolf-data-visualizer' ); ?></p>
+
+			<?php $custom_schemes = Coywolf_CDV_Schemes::custom_schemes(); ?>
+			<?php if ( ! empty( $custom_schemes ) ) : ?>
+				<table class="widefat striped coywolf-cdv-custom-schemes">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Name', 'coywolf-data-visualizer' ); ?></th>
+							<th><?php esc_html_e( 'Colors', 'coywolf-data-visualizer' ); ?></th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $custom_schemes as $custom_key => $custom_scheme ) : ?>
+							<tr>
+								<td><?php echo esc_html( isset( $custom_scheme['label'] ) ? $custom_scheme['label'] : $custom_key ); ?></td>
+								<td>
+									<span class="coywolf-cdv-scheme-swatches">
+										<?php foreach ( (array) ( isset( $custom_scheme['colors'] ) ? $custom_scheme['colors'] : array() ) as $custom_color ) : ?>
+											<span class="coywolf-cdv-swatch" style="background-color: <?php echo esc_attr( $custom_color ); ?>"></span>
+										<?php endforeach; ?>
+									</span>
+								</td>
+								<td>
+									<a class="button-link button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=coywolf_cdv_remove_scheme&scheme=' . rawurlencode( $custom_key ) ), 'coywolf_cdv_remove_scheme_' . $custom_key ) ); ?>"><?php esc_html_e( 'Remove', 'coywolf-data-visualizer' ); ?></a>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="coywolf-cdv-scheme-upload">
+				<input type="hidden" name="action" value="coywolf_cdv_upload_scheme" />
+				<?php wp_nonce_field( 'coywolf_cdv_upload_scheme' ); ?>
+				<input type="file" name="scheme_file" accept=".json,application/json" required />
+				<?php submit_button( __( 'Upload Scheme', 'coywolf-data-visualizer' ), 'secondary', 'submit', false ); ?>
 			</form>
 		</div>
 		<?php
