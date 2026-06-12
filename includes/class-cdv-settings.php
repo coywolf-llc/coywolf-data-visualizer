@@ -383,7 +383,34 @@ final class Coywolf_CDV_Settings {
 							</select>
 							<span class="coywolf-cdv-scheme-swatches"></span>
 							<button type="button" class="button" id="coywolf-cdv-download-scheme"><?php esc_html_e( 'Download', 'coywolf-data-visualizer' ); ?></button>
-							<p class="description"><?php esc_html_e( 'The palette applied to newly created charts. Each chart can switch to a different scheme on its Edit Chart screen. Palettes include Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer, and D3 Category 10. Download exports the selected scheme as a .json file you can tweak and upload below.', 'coywolf-data-visualizer' ); ?></p>
+							<p class="description"><?php esc_html_e( 'The palette applied to newly created charts. Each chart can switch to a different scheme on its Edit Chart screen. Palettes include Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer, and D3 Category 10. Download exports the selected scheme as a .json file you can tweak and upload as your own below.', 'coywolf-data-visualizer' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Custom schemes', 'coywolf-data-visualizer' ); ?></th>
+						<td>
+							<?php foreach ( Coywolf_CDV_Schemes::custom_schemes() as $custom_key => $custom_scheme ) : ?>
+								<p class="coywolf-cdv-custom-scheme-row">
+									<strong><?php echo esc_html( isset( $custom_scheme['label'] ) ? $custom_scheme['label'] : $custom_key ); ?></strong>
+									<span class="coywolf-cdv-scheme-swatches">
+										<?php foreach ( (array) ( isset( $custom_scheme['colors'] ) ? $custom_scheme['colors'] : array() ) as $custom_color ) : ?>
+											<span class="coywolf-cdv-swatch" style="background-color: <?php echo esc_attr( $custom_color ); ?>"></span>
+										<?php endforeach; ?>
+									</span>
+									<a class="button-link button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=coywolf_cdv_remove_scheme&scheme=' . rawurlencode( $custom_key ) ), 'coywolf_cdv_remove_scheme_' . $custom_key ) ); ?>"><?php esc_html_e( 'Remove', 'coywolf-data-visualizer' ); ?></a>
+								</p>
+							<?php endforeach; ?>
+							<p class="coywolf-cdv-scheme-upload">
+								<?php
+								// These controls submit through the standalone
+								// multipart helper form below (HTML form=""
+								// attribute) — forms can't nest inside the
+								// main options.php form.
+								?>
+								<input type="file" name="scheme_file" accept=".json,application/json" required form="coywolf-cdv-scheme-upload-form" />
+								<button type="submit" class="button" form="coywolf-cdv-scheme-upload-form"><?php esc_html_e( 'Upload Scheme', 'coywolf-data-visualizer' ); ?></button>
+							</p>
+							<p class="description"><?php esc_html_e( 'Upload your own palette as a .json file — the same format the Download button produces: {"name": "My Brand", "colors": ["#123456", "#abcdef"]}. Uploaded schemes appear in every scheme picker.', 'coywolf-data-visualizer' ); ?></p>
 						</td>
 					</tr>
 				</table>
@@ -391,44 +418,9 @@ final class Coywolf_CDV_Settings {
 				<?php submit_button(); ?>
 			</form>
 
-			<h2><?php esc_html_e( 'Custom color schemes', 'coywolf-data-visualizer' ); ?></h2>
-			<p><?php esc_html_e( 'Upload your own palette as a .json file — the same format the Download button produces: {"name": "My Brand", "colors": ["#123456", "#abcdef"]}. Uploaded schemes appear in every scheme picker.', 'coywolf-data-visualizer' ); ?></p>
-
-			<?php $custom_schemes = Coywolf_CDV_Schemes::custom_schemes(); ?>
-			<?php if ( ! empty( $custom_schemes ) ) : ?>
-				<table class="widefat striped coywolf-cdv-custom-schemes">
-					<thead>
-						<tr>
-							<th><?php esc_html_e( 'Name', 'coywolf-data-visualizer' ); ?></th>
-							<th><?php esc_html_e( 'Colors', 'coywolf-data-visualizer' ); ?></th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ( $custom_schemes as $custom_key => $custom_scheme ) : ?>
-							<tr>
-								<td><?php echo esc_html( isset( $custom_scheme['label'] ) ? $custom_scheme['label'] : $custom_key ); ?></td>
-								<td>
-									<span class="coywolf-cdv-scheme-swatches">
-										<?php foreach ( (array) ( isset( $custom_scheme['colors'] ) ? $custom_scheme['colors'] : array() ) as $custom_color ) : ?>
-											<span class="coywolf-cdv-swatch" style="background-color: <?php echo esc_attr( $custom_color ); ?>"></span>
-										<?php endforeach; ?>
-									</span>
-								</td>
-								<td>
-									<a class="button-link button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=coywolf_cdv_remove_scheme&scheme=' . rawurlencode( $custom_key ) ), 'coywolf_cdv_remove_scheme_' . $custom_key ) ); ?>"><?php esc_html_e( 'Remove', 'coywolf-data-visualizer' ); ?></a>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			<?php endif; ?>
-
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="coywolf-cdv-scheme-upload">
+			<form id="coywolf-cdv-scheme-upload-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
 				<input type="hidden" name="action" value="coywolf_cdv_upload_scheme" />
 				<?php wp_nonce_field( 'coywolf_cdv_upload_scheme' ); ?>
-				<input type="file" name="scheme_file" accept=".json,application/json" required />
-				<?php submit_button( __( 'Upload Scheme', 'coywolf-data-visualizer' ), 'secondary', 'submit', false ); ?>
 			</form>
 		</div>
 		<?php
