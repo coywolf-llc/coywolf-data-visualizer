@@ -316,6 +316,12 @@ final class Coywolf_CDV_Admin {
 			$version,
 			true
 		);
+
+		if ( $hook === $this->hooks['settings'] ) {
+			wp_enqueue_style( 'coywolf-cdv-jscolorpicker', COYWOLF_CDV_URL . 'vendor/jscolorpicker/colorpicker.min.css', array(), '1.1.0' );
+			wp_enqueue_script( 'coywolf-cdv-jscolorpicker', COYWOLF_CDV_URL . 'vendor/jscolorpicker/colorpicker.iife.min.js', array(), '1.1.0', true );
+			wp_enqueue_script( 'coywolf-cdv-settings', COYWOLF_CDV_URL . 'js/settings.js', array( 'coywolf-cdv-jscolorpicker' ), $version, true );
+		}
 		wp_localize_script(
 			'coywolf-cdv-admin',
 			'coywolfCDVAdmin',

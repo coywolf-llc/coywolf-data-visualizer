@@ -19,8 +19,14 @@ final class Coywolf_CDV_Rest {
 	 */
 	private $charts;
 
-	public function __construct( Coywolf_CDV_Charts $charts ) {
-		$this->charts = $charts;
+	/**
+	 * @var Coywolf_CDV_Settings
+	 */
+	private $settings;
+
+	public function __construct( Coywolf_CDV_Charts $charts, Coywolf_CDV_Settings $settings ) {
+		$this->charts   = $charts;
+		$this->settings = $settings;
 	}
 
 	public function init() {
@@ -92,6 +98,9 @@ final class Coywolf_CDV_Rest {
 				array( 'status' => 404 )
 			);
 		}
+		// Site-wide appearance settings, so the editor preview matches the
+		// front-end render.
+		$chart['appearance'] = $this->settings->appearance();
 		return rest_ensure_response( $chart );
 	}
 }

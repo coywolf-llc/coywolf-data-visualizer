@@ -93,7 +93,16 @@
 		);
 
 		var wrapStyle = attrs.height > 0 ? { height: attrs.height + 'px' } : {};
-		return el( 'div', { className: 'coywolf-cdv-canvas', style: wrapStyle }, el( 'canvas', { ref: canvasRef } ) );
+		var wrapClass = 'coywolf-cdv-canvas';
+		var appearance = props.chart && props.chart.appearance ? props.chart.appearance : {};
+		if ( appearance.bg ) {
+			wrapStyle.backgroundColor = appearance.bg;
+			wrapClass += ' coywolf-cdv-has-bg';
+		}
+		if ( appearance.radius > 0 ) {
+			wrapStyle.borderRadius = appearance.radius + 'px';
+		}
+		return el( 'div', { className: wrapClass, style: wrapStyle }, el( 'canvas', { ref: canvasRef } ) );
 	}
 
 	/**

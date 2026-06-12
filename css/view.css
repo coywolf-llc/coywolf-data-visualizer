@@ -10,6 +10,13 @@
 	width: 100%;
 }
 
+/* A chart with its own background gets breathing room so the plot doesn't
+   touch the colored edge. */
+.coywolf-cdv-canvas.coywolf-cdv-has-bg {
+	padding: 16px;
+	box-sizing: border-box;
+}
+
 .coywolf-cdv-caption {
 	margin-top: 0.5em;
 	font-size: 0.875em;

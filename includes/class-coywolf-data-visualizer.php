@@ -70,8 +70,8 @@ final class Coywolf_Data_Visualizer {
 		$this->charts   = new Coywolf_CDV_Charts();
 		$this->ai       = new Coywolf_CDV_AI();
 		$this->settings = new Coywolf_CDV_Settings( $this->ai );
-		$this->rest     = new Coywolf_CDV_Rest( $this->charts );
-		$this->block    = new Coywolf_CDV_Block( $this->charts );
+		$this->rest     = new Coywolf_CDV_Rest( $this->charts, $this->settings );
+		$this->block    = new Coywolf_CDV_Block( $this->charts, $this->settings );
 
 		$this->charts->init();
 		$this->settings->init();

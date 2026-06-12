@@ -22,8 +22,14 @@ final class Coywolf_CDV_Block {
 	 */
 	private $charts;
 
-	public function __construct( Coywolf_CDV_Charts $charts ) {
-		$this->charts = $charts;
+	/**
+	 * @var Coywolf_CDV_Settings
+	 */
+	private $settings;
+
+	public function __construct( Coywolf_CDV_Charts $charts, Coywolf_CDV_Settings $settings ) {
+		$this->charts   = $charts;
+		$this->settings = $settings;
 	}
 
 	public function init() {
@@ -95,6 +101,17 @@ final class Coywolf_CDV_Block {
 		$figure_style = $max_width > 0 ? 'max-width:' . $max_width . 'px;' : '';
 		$wrap_style   = $height > 0 ? 'height:' . $height . 'px;' : '';
 
+		// Site-wide appearance settings (Settings → Chart appearance).
+		$appearance = $this->settings->appearance();
+		$wrap_class = 'coywolf-cdv-canvas';
+		if ( '' !== $appearance['bg'] ) {
+			$wrap_style .= 'background-color:' . $appearance['bg'] . ';';
+			$wrap_class .= ' coywolf-cdv-has-bg';
+		}
+		if ( $appearance['radius'] > 0 ) {
+			$wrap_style .= 'border-radius:' . $appearance['radius'] . 'px;';
+		}
+
 		$aria = $chart['title'];
 		if ( '' !== $caption ) {
 			$aria .= '. ' . $caption;
@@ -114,7 +131,7 @@ final class Coywolf_CDV_Block {
 		);
 
 		$html  = '<figure ' . $wrapper . '>';
-		$html .= '<div class="coywolf-cdv-canvas"' . ( '' !== $wrap_style ? ' style="' . esc_attr( $wrap_style ) . '"' : '' ) . '>';
+		$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . ( '' !== $wrap_style ? ' style="' . esc_attr( $wrap_style ) . '"' : '' ) . '>';
 		$html .= '<canvas data-coywolf-cdv-config="' . esc_attr( (string) wp_json_encode( $config ) ) . '"';
 		if ( $height > 0 ) {
 			$html .= ' data-coywolf-cdv-fixed-height="1"';
