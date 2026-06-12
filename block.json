@@ -1,0 +1,31 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "coywolf/chart",
+	"title": "Coywolf Chart",
+	"category": "widgets",
+	"icon": "chart-bar",
+	"description": "Embed a saved chart from Coywolf Data Visualizer.",
+	"keywords": [ "chart", "graph", "data", "visualization" ],
+	"textdomain": "coywolf-data-visualizer",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"anchor": true
+	},
+	"attributes": {
+		"chartId": { "type": "number", "default": 0 },
+		"chartTitle": { "type": "string", "default": "" },
+		"showTitle": { "type": "boolean", "default": true },
+		"showCaption": { "type": "boolean", "default": true },
+		"captionOverride": { "type": "string", "default": "" },
+		"showLegend": { "type": "boolean", "default": true },
+		"legendPosition": { "type": "string", "default": "" },
+		"maxWidth": { "type": "number", "default": 0 },
+		"height": { "type": "number", "default": 0 }
+	},
+	"editorScript": "coywolf-cdv-block",
+	"editorStyle": "coywolf-cdv-block-editor",
+	"viewScript": "coywolf-cdv-view",
+	"style": "coywolf-cdv-view"
+}

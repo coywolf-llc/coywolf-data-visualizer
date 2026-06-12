@@ -1,0 +1,19 @@
+/* Coywolf Data Visualizer — front-end styles. */
+
+.coywolf-cdv-chart {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.coywolf-cdv-canvas {
+	position: relative;
+	width: 100%;
+}
+
+.coywolf-cdv-caption {
+	margin-top: 0.5em;
+	font-size: 0.875em;
+	color: inherit;
+	opacity: 0.75;
+	text-align: center;
+}
