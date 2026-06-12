@@ -154,19 +154,21 @@
 	border-color: #d63638;
 }
 
-/* Custom color schemes (Settings). */
-.coywolf-cdv-custom-schemes {
-	max-width: 640px;
-	margin-bottom: 16px;
+/* Custom color schemes (Settings → Chart appearance). */
+.coywolf-cdv-custom-scheme-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 0 0 8px;
+}
+
+.coywolf-cdv-custom-scheme-row .coywolf-cdv-scheme-swatches {
+	margin-left: 0;
 }
 
 .coywolf-cdv-scheme-upload {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-}
-
-.coywolf-cdv-scheme-upload .submit {
-	margin: 0;
-	padding: 0;
+	margin: 4px 0 0;
 }
