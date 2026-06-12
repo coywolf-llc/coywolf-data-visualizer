@@ -4,7 +4,7 @@ Tags: charts, chart.js, data visualization, ai, claude
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,9 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 == Changelog ==
+
+= 1.3.1 =
+* Integrate custom color schemes into the Chart appearance section (#8).
 
 = 1.3.0 =
 * Custom color schemes: download the selected scheme as a .json file from Settings, edit it, and upload it back as your own — custom schemes appear in every scheme picker and can be removed at any time.
