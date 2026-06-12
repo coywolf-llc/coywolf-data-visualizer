@@ -1,0 +1,58 @@
+/* Coywolf Data Visualizer — admin styles. */
+
+.coywolf-cdv-test-ok {
+	color: #00a32a;
+	margin-left: 8px;
+}
+
+.coywolf-cdv-test-fail {
+	color: #d63638;
+	margin-left: 8px;
+}
+
+.coywolf-cdv-add .spinner {
+	float: none;
+	vertical-align: middle;
+}
+
+.coywolf-cdv-suggestions {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+	gap: 16px;
+	margin: 16px 0;
+}
+
+.coywolf-cdv-suggestion {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 16px 16px;
+}
+
+.coywolf-cdv-suggestion-select {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.coywolf-cdv-suggestion-canvas {
+	position: relative;
+	height: 280px;
+	margin-bottom: 12px;
+}
+
+.coywolf-cdv-suggestion-field {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+}
+
+.coywolf-cdv-suggestion-field input,
+.coywolf-cdv-suggestion-field textarea {
+	display: block;
+	font-weight: 400;
+	margin-top: 4px;
+	width: 100%;
+}
