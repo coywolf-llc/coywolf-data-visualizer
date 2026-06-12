@@ -208,23 +208,21 @@ final class Coywolf_CDV_Admin {
 		<div class="wrap coywolf-cdv-add">
 			<h1><?php esc_html_e( 'Add Chart', 'coywolf-data-visualizer' ); ?></h1>
 
-			<?php if ( ! $this->ai->is_configured() ) : ?>
-				<div class="notice notice-warning"><p>
+			<?php $has_key = $this->ai->is_configured(); ?>
+
+			<p><?php esc_html_e( 'Upload a data file, describe what the data represents, and click Analyze for a set of suggested charts. Pick the ones you want to keep.', 'coywolf-data-visualizer' ); ?></p>
+
+			<?php if ( ! $has_key ) : ?>
+				<div class="notice notice-info inline"><p>
 					<?php
 					printf(
 						/* translators: %s: Settings screen URL */
-						wp_kses_post( __( 'Add your Claude API key on the <a href="%s">Settings page</a> before generating charts.', 'coywolf-data-visualizer' ) ),
+						wp_kses_post( __( 'Charts are designed by the built-in analyzer. For richer, AI-designed charts and captions, add a Claude API key on the <a href="%s">Settings page</a> — it&#8217;s optional.', 'coywolf-data-visualizer' ) ),
 						esc_url( admin_url( 'admin.php?page=' . Coywolf_CDV_Settings::PAGE ) )
 					);
 					?>
 				</p></div>
-				</div>
-				<?php
-				return;
-			endif;
-			?>
-
-			<p><?php esc_html_e( 'Upload a data file, describe what the data represents, and Claude will design a set of charts. Pick the ones you want to keep.', 'coywolf-data-visualizer' ); ?></p>
+			<?php endif; ?>
 
 			<form id="coywolf-cdv-analyze-form">
 				<table class="form-table" role="presentation">
@@ -242,10 +240,34 @@ final class Coywolf_CDV_Admin {
 							<label for="coywolf-cdv-explanation"><?php esc_html_e( 'What does this data represent?', 'coywolf-data-visualizer' ); ?></label>
 						</th>
 						<td>
-							<textarea id="coywolf-cdv-explanation" name="explanation" rows="4" class="large-text" required placeholder="<?php esc_attr_e( 'e.g. Monthly organic traffic and conversions for our three product pages, January through December 2025.', 'coywolf-data-visualizer' ); ?>"></textarea>
-							<p class="description"><?php esc_html_e( 'A sentence or two of context helps Claude pick the most relevant charts. The data and this explanation are sent to the Claude API.', 'coywolf-data-visualizer' ); ?></p>
+							<textarea id="coywolf-cdv-explanation" name="explanation" rows="4" class="large-text" placeholder="<?php esc_attr_e( 'e.g. Monthly organic traffic and conversions for our three product pages, January through December 2025.', 'coywolf-data-visualizer' ); ?>"></textarea>
+							<p class="description">
+								<?php
+								echo $has_key
+									? esc_html__( 'Required for the Claude engine — context helps it pick the most relevant charts. The data and this explanation are sent to the Claude API.', 'coywolf-data-visualizer' )
+									: esc_html__( 'Optional for the built-in analyzer, which works from the column names and values alone.', 'coywolf-data-visualizer' );
+								?>
+							</p>
 						</td>
 					</tr>
+					<?php if ( $has_key ) : ?>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Analysis engine', 'coywolf-data-visualizer' ); ?></th>
+							<td>
+								<fieldset>
+									<legend class="screen-reader-text"><?php esc_html_e( 'Analysis engine', 'coywolf-data-visualizer' ); ?></legend>
+									<label>
+										<input type="radio" name="engine" value="ai" checked="checked" />
+										<?php esc_html_e( 'Claude (recommended) — AI-designed charts and insight captions via your API key', 'coywolf-data-visualizer' ); ?>
+									</label><br />
+									<label>
+										<input type="radio" name="engine" value="builtin" />
+										<?php esc_html_e( 'Built-in analyzer — instant and free, designed from the column types', 'coywolf-data-visualizer' ); ?>
+									</label>
+								</fieldset>
+							</td>
+						</tr>
+					<?php endif; ?>
 				</table>
 				<p class="submit">
 					<button type="submit" class="button button-primary" id="coywolf-cdv-analyze"><?php esc_html_e( 'Analyze', 'coywolf-data-visualizer' ); ?></button>
@@ -257,6 +279,7 @@ final class Coywolf_CDV_Admin {
 
 			<div id="coywolf-cdv-results" hidden>
 				<h2><?php esc_html_e( 'Suggested charts', 'coywolf-data-visualizer' ); ?></h2>
+				<p id="coywolf-cdv-engine-note" class="description"></p>
 				<p><?php esc_html_e( 'Select the charts to save. You can edit each title and caption before saving.', 'coywolf-data-visualizer' ); ?></p>
 				<div id="coywolf-cdv-suggestions" class="coywolf-cdv-suggestions"></div>
 				<p class="submit">
@@ -312,13 +335,17 @@ final class Coywolf_CDV_Admin {
 					'saving'       => __( 'Saving…', 'coywolf-data-visualizer' ),
 					'titleLabel'   => __( 'Title', 'coywolf-data-visualizer' ),
 					'captionLabel' => __( 'Caption', 'coywolf-data-visualizer' ),
+					'engineAi'     => __( 'Designed by Claude from your data and explanation.', 'coywolf-data-visualizer' ),
+					'engineLocal'  => __( 'Designed by the built-in analyzer from the column types — add a Claude API key in Settings for richer suggestions.', 'coywolf-data-visualizer' ),
 				),
 			)
 		);
 	}
 
 	/**
-	 * AJAX: parse the upload, send it to Claude, return chart suggestions.
+	 * AJAX: parse the upload and return chart suggestions from the chosen
+	 * engine — the built-in analyzer by default, Claude when a key is saved
+	 * and the user picked it.
 	 */
 	public function ajax_analyze() {
 		check_ajax_referer( 'coywolf_cdv_analyze' );
@@ -326,10 +353,18 @@ final class Coywolf_CDV_Admin {
 			wp_send_json_error( array( 'message' => __( 'Not allowed.', 'coywolf-data-visualizer' ) ), 403 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce checked above.
 		$explanation = isset( $_POST['explanation'] ) ? sanitize_textarea_field( wp_unslash( $_POST['explanation'] ) ) : '';
-		if ( '' === trim( $explanation ) ) {
-			wp_send_json_error( array( 'message' => __( 'Describe what the data represents before analyzing.', 'coywolf-data-visualizer' ) ) );
+		$engine      = isset( $_POST['engine'] ) ? sanitize_key( wp_unslash( $_POST['engine'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		if ( ! in_array( $engine, array( 'ai', 'builtin' ), true ) ) {
+			$engine = $this->ai->is_configured() ? 'ai' : 'builtin';
+		}
+		if ( 'ai' === $engine && ! $this->ai->is_configured() ) {
+			$engine = 'builtin';
+		}
+		if ( 'ai' === $engine && '' === trim( $explanation ) ) {
+			wp_send_json_error( array( 'message' => __( 'Describe what the data represents before analyzing with Claude.', 'coywolf-data-visualizer' ) ) );
 		}
 
 		$parser = new Coywolf_CDV_Parser();
@@ -339,19 +374,29 @@ final class Coywolf_CDV_Admin {
 			wp_send_json_error( array( 'message' => $table->get_error_message() ) );
 		}
 
-		$suggestions = $this->ai->analyze(
-			$table['csv'],
-			$explanation,
-			array(
-				'total_rows' => $table['total_rows'],
-				'truncated'  => $table['truncated'],
-			)
-		);
+		if ( 'ai' === $engine ) {
+			$suggestions = $this->ai->analyze(
+				$table['csv'],
+				$explanation,
+				array(
+					'total_rows' => $table['total_rows'],
+					'truncated'  => $table['truncated'],
+				)
+			);
+		} else {
+			$heuristics  = new Coywolf_CDV_Heuristics();
+			$suggestions = $heuristics->analyze( $table['rows'] );
+		}
 		if ( is_wp_error( $suggestions ) ) {
 			wp_send_json_error( array( 'message' => $suggestions->get_error_message() ) );
 		}
 
-		wp_send_json_success( array( 'suggestions' => $suggestions ) );
+		wp_send_json_success(
+			array(
+				'suggestions' => $suggestions,
+				'engine'      => $engine,
+			)
+		);
 	}
 
 	/**

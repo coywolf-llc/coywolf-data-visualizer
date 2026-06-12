@@ -191,6 +191,10 @@
 		body.append( '_ajax_nonce', config.analyzeNonce );
 		body.append( 'data_file', file );
 		body.append( 'explanation', explanationInput.value );
+		var engineInput = form.querySelector( 'input[name="engine"]:checked' );
+		if ( engineInput ) {
+			body.append( 'engine', engineInput.value );
+		}
 
 		fetch( config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body } )
 			.then( function ( res ) {
@@ -203,6 +207,10 @@
 				}
 				var suggestions = res.data.suggestions || [];
 				suggestions.forEach( buildCard );
+				var engineNote = document.getElementById( 'coywolf-cdv-engine-note' );
+				if ( engineNote ) {
+					engineNote.textContent = 'ai' === res.data.engine ? i18n.engineAi || '' : i18n.engineLocal || '';
+				}
 				results.hidden = false;
 				results.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 			} )
