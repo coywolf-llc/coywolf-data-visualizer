@@ -15,6 +15,7 @@ global $wpdb;
 // Options.
 delete_option( 'coywolf_cdv_api_key' );
 delete_option( 'coywolf_cdv_settings' );
+delete_option( 'coywolf_cdv_custom_schemes' );
 
 // Plugin transients (model list cache + usage tallies).
 delete_transient( 'coywolf_cdv_models' );

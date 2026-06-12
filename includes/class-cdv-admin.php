@@ -170,6 +170,23 @@ final class Coywolf_CDV_Admin {
 			return;
 		}
 
+		// Delete button: remove the chart (its block is stripped from every
+		// post/page via the before_delete_post hook) and land on All Charts.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above.
+		if ( ! empty( $_POST['cdv_delete_chart'] ) ) {
+			$deleted = $this->charts->delete_chart( $chart_id ) ? 1 : 0;
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'        => self::PAGE,
+						'cdv-deleted' => $deleted,
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce checked above.
 		$title   = isset( $_POST['chart_title'] ) ? sanitize_text_field( wp_unslash( $_POST['chart_title'] ) ) : '';
 		$caption = isset( $_POST['chart_caption'] ) ? sanitize_textarea_field( wp_unslash( $_POST['chart_caption'] ) ) : '';
@@ -191,12 +208,18 @@ final class Coywolf_CDV_Admin {
 
 		$result = $this->charts->update_chart( $chart_id, $config, $title, $caption, $display );
 
+		// Success lands back on All Charts; a failure returns to the editor
+		// so nothing typed is lost to a redirect.
 		wp_safe_redirect(
-			add_query_arg(
-				'cdv-updated',
-				is_wp_error( $result ) ? '0' : '1',
-				self::edit_url( $chart_id )
-			)
+			is_wp_error( $result )
+				? add_query_arg( 'cdv-updated', '0', self::edit_url( $chart_id ) )
+				: add_query_arg(
+					array(
+						'page'        => self::PAGE,
+						'cdv-updated' => '1',
+					),
+					admin_url( 'admin.php' )
+				)
 		);
 		exit;
 	}
@@ -236,9 +259,7 @@ final class Coywolf_CDV_Admin {
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>" class="page-title-action"><?php esc_html_e( 'All Charts', 'coywolf-data-visualizer' ); ?></a>
 			<hr class="wp-header-end" />
 
-			<?php if ( '1' === $updated ) : ?>
-				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Chart updated. Every post and page embedding it shows the change immediately.', 'coywolf-data-visualizer' ); ?></p></div>
-			<?php elseif ( '0' === $updated ) : ?>
+			<?php if ( '0' === $updated ) : ?>
 				<div class="notice notice-error is-dismissible"><p><?php esc_html_e( 'The chart could not be updated.', 'coywolf-data-visualizer' ); ?></p></div>
 			<?php endif; ?>
 
@@ -308,7 +329,11 @@ final class Coywolf_CDV_Admin {
 						</tr>
 					</table>
 
-					<?php submit_button( __( 'Update Chart', 'coywolf-data-visualizer' ) ); ?>
+					<p class="submit coywolf-cdv-edit-actions">
+						<?php submit_button( __( 'Update Chart', 'coywolf-data-visualizer' ), 'primary', 'submit', false ); ?>
+						<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ); ?>"><?php esc_html_e( 'Cancel', 'coywolf-data-visualizer' ); ?></a>
+						<button type="submit" name="cdv_delete_chart" value="1" class="button coywolf-cdv-delete-button" id="coywolf-cdv-edit-delete"><?php esc_html_e( 'Delete', 'coywolf-data-visualizer' ); ?></button>
+					</p>
 				</form>
 			</div>
 		</div>
@@ -377,13 +402,19 @@ final class Coywolf_CDV_Admin {
 		$this->list_table = new Coywolf_CDV_List_Table( $this->charts );
 		$this->list_table->prepare_items();
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flag set by our redirect.
-		$deleted = isset( $_GET['cdv-deleted'] ) ? absint( $_GET['cdv-deleted'] ) : 0;
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- display-only flags set by our redirects.
+		$deleted      = isset( $_GET['cdv-deleted'] ) ? absint( $_GET['cdv-deleted'] ) : 0;
+		$updated_flag = isset( $_GET['cdv-updated'] ) && '1' === $_GET['cdv-updated'];
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		?>
 		<div class="wrap coywolf-cdv-list">
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'All Charts', 'coywolf-data-visualizer' ); ?></h1>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_ADD ) ); ?>" class="page-title-action"><?php esc_html_e( 'Add Chart', 'coywolf-data-visualizer' ); ?></a>
 			<hr class="wp-header-end" />
+
+			<?php if ( $updated_flag ) : ?>
+				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Chart updated. Every post and page embedding it shows the change immediately.', 'coywolf-data-visualizer' ); ?></p></div>
+			<?php endif; ?>
 
 			<?php if ( $deleted > 0 ) : ?>
 				<div class="notice notice-success is-dismissible"><p>
@@ -542,7 +573,10 @@ final class Coywolf_CDV_Admin {
 			wp_localize_script(
 				'coywolf-cdv-settings',
 				'coywolfCDVSettings',
-				array( 'palettes' => Coywolf_CDV_Schemes::palettes() )
+				array(
+					'palettes' => Coywolf_CDV_Schemes::palettes(),
+					'schemes'  => Coywolf_CDV_Schemes::choices(),
+				)
 			);
 		}
 		wp_localize_script(
@@ -606,9 +640,10 @@ final class Coywolf_CDV_Admin {
 			'coywolf-cdv-edit',
 			'coywolfCDVEdit',
 			array(
-				'config'   => $chart['config'],
-				'display'  => $chart['display'],
-				'palettes' => Coywolf_CDV_Schemes::palettes(),
+				'config'        => $chart['config'],
+				'display'       => $chart['display'],
+				'palettes'      => Coywolf_CDV_Schemes::palettes(),
+				'deleteConfirm' => __( 'Delete this chart? Its block will also be removed from every post and page that uses it.', 'coywolf-data-visualizer' ),
 			)
 		);
 	}

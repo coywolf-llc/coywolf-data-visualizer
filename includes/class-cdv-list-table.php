@@ -164,7 +164,6 @@ final class Coywolf_CDV_List_Table extends WP_List_Table {
 				esc_url( $edit_url ),
 				esc_html__( 'Edit', 'coywolf-data-visualizer' )
 			),
-			'id'     => sprintf( /* translators: %d: chart ID */ esc_html__( 'ID: %d', 'coywolf-data-visualizer' ), (int) $item->ID ),
 			'delete' => sprintf(
 				'<a href="%s" class="submitdelete" onclick="return confirm(%s);">%s</a>',
 				esc_url( $delete_url ),

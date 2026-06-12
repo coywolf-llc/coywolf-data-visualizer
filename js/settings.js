@@ -55,9 +55,36 @@
 		} );
 	}
 
+	function initDownload() {
+		var button = document.getElementById( 'coywolf-cdv-download-scheme' );
+		var select = document.getElementById( 'coywolf-cdv-default-scheme' );
+		var data = window.coywolfCDVSettings || {};
+		if ( ! button || ! select || ! data.palettes ) {
+			return;
+		}
+		button.addEventListener( 'click', function () {
+			var key = select.value;
+			var colors = data.palettes[ key ];
+			if ( ! colors ) {
+				return;
+			}
+			var labels = data.schemes || {};
+			var payload = JSON.stringify( { name: labels[ key ] || key, colors: colors }, null, '\t' );
+			var blob = new Blob( [ payload ], { type: 'application/json' } );
+			var link = document.createElement( 'a' );
+			link.href = URL.createObjectURL( blob );
+			link.download = key + '.json';
+			document.body.appendChild( link );
+			link.click();
+			document.body.removeChild( link );
+			URL.revokeObjectURL( link.href );
+		} );
+	}
+
 	function boot() {
 		init();
 		initSwatches();
+		initDownload();
 	}
 
 	if ( 'loading' === document.readyState ) {
