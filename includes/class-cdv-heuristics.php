@@ -66,6 +66,16 @@ final class Coywolf_CDV_Heuristics {
 		$numerics   = $this->columns_of( 'numeric' );
 		$categories = $this->columns_of( 'category' );
 
+		// Prefer the "most categorical" column when several qualify — fewest
+		// distinct labels first, so a Status column beats the unique Ticket-ID
+		// column that real-world exports usually lead with.
+		usort(
+			$categories,
+			function ( $a, $b ) {
+				return $this->columns[ $a ]['distinct'] <=> $this->columns[ $b ]['distinct'];
+			}
+		);
+
 		$suggestions = array();
 
 		// 1. Time series: date column + numeric(s).
@@ -102,6 +112,15 @@ final class Coywolf_CDV_Heuristics {
 					$suggestions[] = $radar;
 				}
 			}
+
+			// A second, high-cardinality label column (countries behind
+			// regions, products behind categories) still ranks usefully.
+			foreach ( array_slice( $categories, 1 ) as $other ) {
+				if ( $this->columns[ $other ]['distinct'] > self::TOP_N ) {
+					$suggestions[] = $this->ranking_bar( $other, $numerics[0] );
+					break;
+				}
+			}
 		}
 
 		// 5. Correlation: two numeric columns (skip when a date axis already
@@ -112,11 +131,24 @@ final class Coywolf_CDV_Heuristics {
 			$suggestions[] = $this->correlation_scatter( $numerics[ count( $numerics ) - 2 ], $numerics[ count( $numerics ) - 1 ] );
 		}
 
-		// 6. Frequency: categorical data with no measure — count rows.
+		// 6. Frequency: categorical data with no measure — count rows. ID-like
+		// columns produce no chart (all counts are 1), so walk the category
+		// columns until two of them chart.
 		if ( $categories && ! $numerics ) {
-			$suggestions[] = $this->frequency_bar( $categories[0] );
-			if ( $this->columns[ $categories[0] ]['distinct'] <= self::MAX_PIE_SLICES ) {
-				$suggestions[] = $this->frequency_doughnut( $categories[0] );
+			$emitted = 0;
+			foreach ( $categories as $cat_index ) {
+				$bar = $this->frequency_bar( $cat_index );
+				if ( null === $bar ) {
+					continue;
+				}
+				$suggestions[] = $bar;
+				if ( 0 === $emitted && $this->columns[ $cat_index ]['distinct'] <= self::MAX_PIE_SLICES ) {
+					$suggestions[] = $this->frequency_doughnut( $cat_index );
+				}
+				++$emitted;
+				if ( $emitted >= 2 ) {
+					break;
+				}
 			}
 		}
 
@@ -182,6 +214,12 @@ final class Coywolf_CDV_Heuristics {
 				// Unique-per-row labels (one country per row, etc.) are still
 				// categories — paired with a measure they make ranking charts.
 				$type = 'category';
+				// …but an all-unique column whose header names it as an
+				// identifier (Order ID, UUID, SKU) is row plumbing, not a
+				// dimension — a "Top 10 Order ID" chart is noise.
+				if ( $distinct === $nonempty && $this->looks_like_id_column( $name ) ) {
+					$type = 'text';
+				}
 			}
 
 			$columns[ $index ] = array(
@@ -253,6 +291,17 @@ final class Coywolf_CDV_Heuristics {
 		}
 		$stamp = strtotime( $value );
 		return false === $stamp ? null : $stamp;
+	}
+
+	/**
+	 * Whether a column header names an identifier ("Order ID", "ticket_id",
+	 * "UUID", "SKU").
+	 *
+	 * @param string $name Column header.
+	 * @return bool
+	 */
+	private function looks_like_id_column( $name ) {
+		return (bool) preg_match( '/(^|[\s_\-])(id|ids|uuid|guid|key|hash|sku)$/i', trim( (string) $name ) );
 	}
 
 	/**
