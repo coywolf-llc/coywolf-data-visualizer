@@ -117,7 +117,14 @@ final class Coywolf_CDV_Admin {
 			self::PAGE_DOCS,
 			array( 'Coywolf_CDV_Docs', 'render_page' )
 		);
-		// Edit Chart: routable but not shown in the menu.
+		// Edit Chart: registered under Charts so WordPress's routing,
+		// capability check, and menu highlighting all resolve natively. The
+		// menu item itself is removed at admin_head — which runs after
+		// admin.php has routed and permission-checked the request, so
+		// (unlike calling remove_submenu_page() here at registration time,
+		// which breaks parent resolution with "Sorry, you are not allowed
+		// to access this page") the removal only affects display. On the
+		// Edit Chart screen the item is kept and shows as current.
 		$this->hooks['edit'] = add_submenu_page(
 			self::PAGE,
 			__( 'Edit Chart', 'coywolf-data-visualizer' ),
@@ -126,10 +133,21 @@ final class Coywolf_CDV_Admin {
 			self::PAGE_EDIT,
 			array( $this, 'render_edit_page' )
 		);
-		remove_submenu_page( self::PAGE, self::PAGE_EDIT );
+		add_action( 'admin_head', array( $this, 'hide_edit_menu_item' ) );
 
 		add_action( 'load-' . $this->hooks['list'], array( $this, 'handle_chart_actions' ) );
 		add_action( 'load-' . $this->hooks['edit'], array( $this, 'handle_edit_save' ) );
+	}
+
+	/**
+	 * Drop the Edit Chart menu item just before the menu renders, on every
+	 * screen except the Edit Chart screen itself.
+	 */
+	public function hide_edit_menu_item() {
+		global $plugin_page;
+		if ( self::PAGE_EDIT !== $plugin_page ) {
+			remove_submenu_page( self::PAGE, self::PAGE_EDIT );
+		}
 	}
 
 	/**
