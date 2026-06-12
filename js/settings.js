@@ -41,9 +41,28 @@
 		} );
 	}
 
-	if ( 'loading' === document.readyState ) {
-		document.addEventListener( 'DOMContentLoaded', init );
-	} else {
+	function initSwatches() {
+		var data = window.coywolfCDVSettings || {};
+		if ( ! window.coywolfCDVTransforms || ! data.palettes ) {
+			return;
+		}
+		var selects = document.querySelectorAll( '.coywolf-cdv-scheme-select' );
+		Array.prototype.forEach.call( selects, function ( select ) {
+			var mount = select.parentNode.querySelector( '.coywolf-cdv-scheme-swatches' );
+			if ( mount ) {
+				window.coywolfCDVTransforms.swatches( select, mount, data.palettes );
+			}
+		} );
+	}
+
+	function boot() {
 		init();
+		initSwatches();
+	}
+
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', boot );
+	} else {
+		boot();
 	}
 } )();

@@ -56,3 +56,80 @@
 	margin-top: 4px;
 	width: 100%;
 }
+
+.coywolf-cdv-suggestion-options {
+	border-top: 1px solid #f0f0f1;
+	margin-top: 10px;
+	padding-top: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 18px;
+	align-items: center;
+}
+
+.coywolf-cdv-suggestion-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.coywolf-cdv-suggestion-control select {
+	font-weight: 400;
+}
+
+.coywolf-cdv-suggestion-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Color-scheme swatches (Settings + Edit Chart). */
+.coywolf-cdv-scheme-swatches {
+	display: inline-flex;
+	gap: 3px;
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
+.coywolf-cdv-swatch {
+	width: 14px;
+	height: 14px;
+	border-radius: 3px;
+	display: inline-block;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Edit Chart screen. */
+.coywolf-cdv-edit-layout {
+	display: grid;
+	grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+	gap: 24px;
+	align-items: start;
+	max-width: 1200px;
+}
+
+@media (max-width: 960px) {
+	.coywolf-cdv-edit-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.coywolf-cdv-edit-preview {
+	position: sticky;
+	top: 48px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px;
+}
+
+.coywolf-cdv-edit-canvas {
+	position: relative;
+	height: 340px;
+}
+
+#coywolf-cdv-edit-caption-preview {
+	margin-top: 12px;
+	text-align: center;
+}

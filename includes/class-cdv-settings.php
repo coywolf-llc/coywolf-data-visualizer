@@ -50,9 +50,10 @@ final class Coywolf_CDV_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'model'        => Coywolf_CDV_AI::DEFAULT_MODEL,
-			'chart_bg'     => '#ffffff',
-			'chart_radius' => 0,
+			'model'          => Coywolf_CDV_AI::DEFAULT_MODEL,
+			'chart_bg'       => '#ffffff',
+			'chart_radius'   => 0,
+			'default_scheme' => Coywolf_CDV_Schemes::DEFAULT_SCHEME,
 		);
 	}
 
@@ -114,7 +115,22 @@ final class Coywolf_CDV_Settings {
 		if ( isset( $value['chart_radius'] ) ) {
 			$out['chart_radius'] = max( 0, min( 48, (int) $value['chart_radius'] ) );
 		}
+		if ( isset( $value['default_scheme'] ) && array_key_exists( (string) $value['default_scheme'], Coywolf_CDV_Schemes::SCHEMES ) ) {
+			$out['default_scheme'] = (string) $value['default_scheme'];
+		}
 		return $out;
+	}
+
+	/**
+	 * Scheme applied to newly created charts.
+	 *
+	 * @return string
+	 */
+	public function default_scheme() {
+		$settings = $this->get_settings();
+		return array_key_exists( (string) $settings['default_scheme'], Coywolf_CDV_Schemes::SCHEMES )
+			? (string) $settings['default_scheme']
+			: Coywolf_CDV_Schemes::DEFAULT_SCHEME;
 	}
 
 	/**
@@ -249,6 +265,20 @@ final class Coywolf_CDV_Settings {
 						<td>
 							<input type="number" min="0" max="48" step="1" id="coywolf-cdv-chart-radius" name="<?php echo esc_attr( self::OPTION ); ?>[chart_radius]" value="<?php echo (int) $settings['chart_radius']; ?>" class="small-text" /> px
 							<p class="description"><?php esc_html_e( 'Rounds the corners of the chart background.', 'coywolf-data-visualizer' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="coywolf-cdv-default-scheme"><?php esc_html_e( 'Color scheme', 'coywolf-data-visualizer' ); ?></label>
+						</th>
+						<td>
+							<select id="coywolf-cdv-default-scheme" name="<?php echo esc_attr( self::OPTION ); ?>[default_scheme]" class="coywolf-cdv-scheme-select">
+								<?php foreach ( Coywolf_CDV_Schemes::choices() as $scheme_key => $scheme_label ) : ?>
+									<option value="<?php echo esc_attr( $scheme_key ); ?>" <?php selected( $settings['default_scheme'], $scheme_key ); ?>><?php echo esc_html( $scheme_label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<span class="coywolf-cdv-scheme-swatches"></span>
+							<p class="description"><?php esc_html_e( 'The palette applied to newly created charts. Each chart can switch to a different scheme on its Edit Chart screen. Palettes include Tableau 10, the Okabe–Ito color-blind-safe set, ColorBrewer, and D3 Category 10.', 'coywolf-data-visualizer' ); ?></p>
 						</td>
 					</tr>
 				</table>
