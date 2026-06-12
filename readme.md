@@ -4,7 +4,7 @@
 
 Turn raw data into publish-ready charts without leaving WordPress. Upload a CSV, Excel, or JSON file and get a set of suggested [Chart.js](https://www.chartjs.org/) charts with titles and captions — designed instantly by the built-in analyzer, or by Claude when you connect an API key (optional, best results). Pick the ones you like, save them, and embed them in any post or page with the Coywolf Chart block.
 
-- **Version:** 1.1.1
+- **Version:** 1.1.2
 - **Requires WordPress:** 6.3+
 - **Requires PHP:** 7.4+
 - **License:** GPL-2.0-or-later
@@ -83,6 +83,9 @@ The plugin finds every post and page embedding that chart, removes the block fro
 The Coywolf Chart block requires the block editor. Charts can't be embedded via shortcode in this version.
 
 ## Changelog
+
+### 1.1.2
+- Add chart background color and corner radius settings (#4).
 
 ### 1.1.1
 - Built-in analyzer: pick the right category column in real-world exports (#3).
