@@ -92,14 +92,59 @@
 		}
 	}
 
-	function previewConfig( suggestion, title ) {
+	var AXIS_TYPES = [ 'bar', 'line', 'scatter', 'bubble' ];
+
+	function typeFamily( type ) {
+		var families = config.typeFamilies || [];
+		for ( var i = 0; i < families.length; i++ ) {
+			if ( -1 !== families[ i ].indexOf( type ) ) {
+				return families[ i ];
+			}
+		}
+		return [ type ];
+	}
+
+	function previewConfig( suggestion, title, type, display ) {
 		var cfg = JSON.parse( JSON.stringify( suggestion.config ) );
+		cfg.type = type || cfg.type;
+		if ( window.coywolfCDVTransforms ) {
+			cfg = window.coywolfCDVTransforms.apply( cfg, display || {}, config.palettes || {} );
+		}
 		cfg.options = cfg.options || {};
 		cfg.options.plugins = cfg.options.plugins || {};
 		cfg.options.plugins.title = { display: true, text: title };
 		cfg.options.responsive = true;
 		cfg.options.maintainAspectRatio = false;
 		return cfg;
+	}
+
+	function makeCheckbox( label, checked ) {
+		var wrap = document.createElement( 'label' );
+		wrap.className = 'coywolf-cdv-suggestion-toggle';
+		var box = document.createElement( 'input' );
+		box.type = 'checkbox';
+		box.checked = !! checked;
+		wrap.appendChild( box );
+		wrap.appendChild( document.createTextNode( ' ' + label ) );
+		return { wrap: wrap, box: box };
+	}
+
+	function makeSelect( label, options, value ) {
+		var wrap = document.createElement( 'label' );
+		wrap.className = 'coywolf-cdv-suggestion-control';
+		wrap.appendChild( document.createTextNode( label ) );
+		var select = document.createElement( 'select' );
+		Object.keys( options ).forEach( function ( key ) {
+			var option = document.createElement( 'option' );
+			option.value = key;
+			option.textContent = options[ key ];
+			if ( key === value ) {
+				option.selected = true;
+			}
+			select.appendChild( option );
+		} );
+		wrap.appendChild( select );
+		return { wrap: wrap, select: select };
 	}
 
 	function buildCard( suggestion, index ) {
@@ -143,30 +188,103 @@
 		captionLabel.appendChild( captionInput );
 		card.appendChild( captionLabel );
 
-		suggestionsBox.appendChild( card );
+		// Per-chart options: color scheme, compatible type switch, toggles.
+		var controls = document.createElement( 'div' );
+		controls.className = 'coywolf-cdv-suggestion-options';
 
-		var chart = null;
-		if ( window.Chart ) {
-			try {
-				chart = new window.Chart( canvas, previewConfig( suggestion, suggestion.title ) );
-				titleInput.addEventListener( 'input', function () {
-					chart.options.plugins.title.text = titleInput.value;
-					chart.update();
-				} );
-			} catch ( e ) {
-				canvasWrap.textContent = 'Preview unavailable.';
-			}
+		var schemeField = makeSelect( i18n.schemeLabel || 'Color scheme', config.schemes || {}, config.defaultScheme || '' );
+		controls.appendChild( schemeField.wrap );
+
+		var family = typeFamily( suggestion.type );
+		var typeField = null;
+		if ( family.length > 1 ) {
+			var typeOptions = {};
+			family.forEach( function ( familyType ) {
+				typeOptions[ familyType ] = familyType;
+			} );
+			typeField = makeSelect( i18n.typeLabel || 'Chart type', typeOptions, suggestion.type );
+			controls.appendChild( typeField.wrap );
 		}
 
-		cards.push( {
+		var initialConfig = suggestion.config || {};
+		var isAxisFamily = -1 !== AXIS_TYPES.indexOf( suggestion.type ) || -1 !== family.indexOf( 'bar' );
+		var multiDataset = initialConfig.data && initialConfig.data.datasets && initialConfig.data.datasets.length > 1;
+		var startsHorizontal = !! ( initialConfig.options && 'y' === initialConfig.options.indexAxis );
+
+		var toggles = {};
+		if ( -1 !== family.indexOf( 'bar' ) ) {
+			toggles.horizontal = makeCheckbox( i18n.horizontal || 'Horizontal bars', startsHorizontal );
+			controls.appendChild( toggles.horizontal.wrap );
+		}
+		if ( isAxisFamily && multiDataset ) {
+			toggles.stacked = makeCheckbox( i18n.stacked || 'Stacked', false );
+			controls.appendChild( toggles.stacked.wrap );
+		}
+		if ( isAxisFamily ) {
+			toggles.beginAtZero = makeCheckbox( i18n.beginAtZero || 'Begin axis at zero', false );
+			controls.appendChild( toggles.beginAtZero.wrap );
+		}
+		if ( isAxisFamily || 'radar' === suggestion.type || 'polarArea' === suggestion.type ) {
+			toggles.hideGrid = makeCheckbox( i18n.hideGrid || 'Hide grid lines', false );
+			controls.appendChild( toggles.hideGrid.wrap );
+		}
+		card.appendChild( controls );
+
+		suggestionsBox.appendChild( card );
+
+		function currentType() {
+			return typeField ? typeField.select.value : suggestion.type;
+		}
+
+		function currentDisplay() {
+			return {
+				scheme: schemeField.select.value,
+				horizontal: !! ( toggles.horizontal && toggles.horizontal.box.checked ),
+				stacked: !! ( toggles.stacked && toggles.stacked.box.checked ),
+				begin_at_zero: !! ( toggles.beginAtZero && toggles.beginAtZero.box.checked ),
+				hide_grid: !! ( toggles.hideGrid && toggles.hideGrid.box.checked ),
+			};
+		}
+
+		var entry = {
 			suggestion: suggestion,
 			card: card,
 			checkbox: checkbox,
 			titleInput: titleInput,
 			captionInput: captionInput,
-			chart: chart,
+			currentType: currentType,
+			currentDisplay: currentDisplay,
+			chart: null,
 			index: index,
+		};
+
+		function renderPreview() {
+			if ( ! window.Chart ) {
+				return;
+			}
+			if ( entry.chart ) {
+				entry.chart.destroy();
+				entry.chart = null;
+			}
+			try {
+				entry.chart = new window.Chart( canvas, previewConfig( suggestion, titleInput.value, currentType(), currentDisplay() ) );
+			} catch ( e ) {
+				canvasWrap.textContent = 'Preview unavailable.';
+			}
+		}
+
+		Array.prototype.forEach.call( controls.querySelectorAll( 'select, input' ), function ( field ) {
+			field.addEventListener( 'change', renderPreview );
 		} );
+		titleInput.addEventListener( 'input', function () {
+			if ( entry.chart ) {
+				entry.chart.options.plugins.title.text = titleInput.value;
+				entry.chart.update();
+			}
+		} );
+
+		renderPreview();
+		cards.push( entry );
 	}
 
 	form.addEventListener( 'submit', function ( event ) {
@@ -229,11 +347,14 @@
 				return card.checkbox.checked;
 			} )
 			.map( function ( card ) {
+				var chartConfig = JSON.parse( JSON.stringify( card.suggestion.config ) );
+				chartConfig.type = card.currentType();
 				return {
 					title: card.titleInput.value,
 					caption: card.captionInput.value,
-					type: card.suggestion.type,
-					config: card.suggestion.config,
+					type: chartConfig.type,
+					config: chartConfig,
+					display: card.currentDisplay(),
 				};
 			} );
 

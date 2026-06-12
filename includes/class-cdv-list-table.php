@@ -157,7 +157,13 @@ final class Coywolf_CDV_List_Table extends WP_List_Table {
 			),
 			'coywolf_cdv_delete_chart_' . (int) $item->ID
 		);
+		$edit_url   = Coywolf_CDV_Admin::edit_url( (int) $item->ID );
 		$actions    = array(
+			'edit'   => sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( $edit_url ),
+				esc_html__( 'Edit', 'coywolf-data-visualizer' )
+			),
 			'id'     => sprintf( /* translators: %d: chart ID */ esc_html__( 'ID: %d', 'coywolf-data-visualizer' ), (int) $item->ID ),
 			'delete' => sprintf(
 				'<a href="%s" class="submitdelete" onclick="return confirm(%s);">%s</a>',
@@ -166,9 +172,13 @@ final class Coywolf_CDV_List_Table extends WP_List_Table {
 				esc_html__( 'Delete', 'coywolf-data-visualizer' )
 			),
 		);
+		$title      = $item->post_title ? $item->post_title : __( '(no title)', 'coywolf-data-visualizer' );
 		return sprintf(
-			'<strong>%s</strong>%s',
-			esc_html( $item->post_title ? $item->post_title : __( '(no title)', 'coywolf-data-visualizer' ) ),
+			'<strong><a class="row-title" href="%s" aria-label="%s">%s</a></strong>%s',
+			esc_url( $edit_url ),
+			/* translators: %s: chart name */
+			esc_attr( sprintf( __( 'Edit "%s"', 'coywolf-data-visualizer' ), $title ) ),
+			esc_html( $title ),
 			$this->row_actions( $actions )
 		);
 	}

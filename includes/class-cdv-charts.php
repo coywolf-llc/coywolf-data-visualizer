@@ -17,9 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Coywolf_CDV_Charts {
 
-	const POST_TYPE  = 'coywolf_cdv_chart';
-	const BLOCK_NAME = 'coywolf/chart';
-	const META_TYPE  = 'coywolf_cdv_type';
+	const POST_TYPE    = 'coywolf_cdv_chart';
+	const BLOCK_NAME   = 'coywolf/chart';
+	const META_TYPE    = 'coywolf_cdv_type';
+	const META_DISPLAY = 'coywolf_cdv_display';
 
 	/**
 	 * Chart.js chart types the plugin accepts.
@@ -74,11 +75,29 @@ final class Coywolf_CDV_Charts {
 
 	/**
 	 * Load a chart as a plain array, or null when the ID doesn't resolve.
+	 * The returned config has the chart's display options (color scheme,
+	 * axis toggles) applied — what every consumer should render.
 	 *
 	 * @param int $chart_id Chart post ID.
-	 * @return array|null { id, title, caption, type, config, created }
+	 * @return array|null { id, title, caption, type, config, display, created }
 	 */
 	public function get_chart( $chart_id ) {
+		$chart = $this->get_chart_raw( $chart_id );
+		if ( ! $chart ) {
+			return null;
+		}
+		$chart['config'] = Coywolf_CDV_Schemes::apply( $chart['config'], $chart['display'] );
+		return $chart;
+	}
+
+	/**
+	 * Load a chart with its stored (untransformed) config — the Edit screen
+	 * works on this so display options stay non-destructive.
+	 *
+	 * @param int $chart_id Chart post ID.
+	 * @return array|null { id, title, caption, type, config, display, created }
+	 */
+	public function get_chart_raw( $chart_id ) {
 		$post = get_post( (int) $chart_id );
 		if ( ! $post || self::POST_TYPE !== $post->post_type || 'publish' !== $post->post_status ) {
 			return null;
@@ -87,12 +106,17 @@ final class Coywolf_CDV_Charts {
 		if ( ! is_array( $config ) ) {
 			return null;
 		}
+		$display = get_post_meta( $post->ID, self::META_DISPLAY, true );
+		$display = is_array( $display )
+			? Coywolf_CDV_Schemes::sanitize_display( $display, $config )
+			: Coywolf_CDV_Schemes::default_display( $config );
 		return array(
 			'id'      => (int) $post->ID,
 			'title'   => (string) $post->post_title,
 			'caption' => (string) $post->post_excerpt,
 			'type'    => (string) get_post_meta( $post->ID, self::META_TYPE, true ),
 			'config'  => $config,
+			'display' => $display,
 			'created' => (string) $post->post_date,
 		);
 	}
@@ -101,12 +125,13 @@ final class Coywolf_CDV_Charts {
 	 * Persist a chart. The config must already be validated/sanitized
 	 * (see Coywolf_CDV_AI::sanitize_suggestion()).
 	 *
-	 * @param string $title   Chart title.
-	 * @param string $caption Chart caption.
-	 * @param array  $config  Chart.js config array.
+	 * @param string     $title   Chart title.
+	 * @param string     $caption Chart caption.
+	 * @param array      $config  Chart.js config array.
+	 * @param array|null $display Optional display options (scheme, toggles).
 	 * @return int|WP_Error New chart ID.
 	 */
-	public function save_chart( $title, $caption, array $config ) {
+	public function save_chart( $title, $caption, array $config, $display = null ) {
 		$type = isset( $config['type'] ) ? (string) $config['type'] : '';
 		if ( ! in_array( $type, self::ALLOWED_TYPES, true ) ) {
 			return new WP_Error( 'coywolf_cdv_bad_type', __( 'Unsupported chart type.', 'coywolf-data-visualizer' ) );
@@ -126,22 +151,30 @@ final class Coywolf_CDV_Charts {
 			return $post_id;
 		}
 		update_post_meta( $post_id, self::META_TYPE, $type );
+		update_post_meta(
+			$post_id,
+			self::META_DISPLAY,
+			null === $display
+				? Coywolf_CDV_Schemes::default_display( $config )
+				: Coywolf_CDV_Schemes::sanitize_display( $display, $config )
+		);
 		$this->flush_usage_cache();
 		return (int) $post_id;
 	}
 
 	/**
-	 * Update a chart's Chart.js config in place (block-editor "edit chart
-	 * settings" path). Title/caption are updated when provided.
+	 * Update a chart (Edit Chart screen). Title/caption are updated when
+	 * provided; display options replace the stored set when passed.
 	 *
-	 * @param int    $chart_id Chart post ID.
-	 * @param array  $config   Sanitized Chart.js config.
-	 * @param string $title    Optional new title ('' keeps current).
-	 * @param string $caption  Optional new caption (null keeps current).
+	 * @param int        $chart_id Chart post ID.
+	 * @param array      $config   Sanitized Chart.js config.
+	 * @param string     $title    Optional new title ('' keeps current).
+	 * @param string     $caption  Optional new caption (null keeps current).
+	 * @param array|null $display  Optional display options (null keeps current).
 	 * @return true|WP_Error
 	 */
-	public function update_chart( $chart_id, array $config, $title = '', $caption = null ) {
-		$existing = $this->get_chart( $chart_id );
+	public function update_chart( $chart_id, array $config, $title = '', $caption = null, $display = null ) {
+		$existing = $this->get_chart_raw( $chart_id );
 		if ( ! $existing ) {
 			return new WP_Error( 'coywolf_cdv_not_found', __( 'Chart not found.', 'coywolf-data-visualizer' ) );
 		}
@@ -164,6 +197,9 @@ final class Coywolf_CDV_Charts {
 			return $result;
 		}
 		update_post_meta( (int) $chart_id, self::META_TYPE, $type );
+		if ( null !== $display ) {
+			update_post_meta( (int) $chart_id, self::META_DISPLAY, Coywolf_CDV_Schemes::sanitize_display( $display, $config ) );
+		}
 		return true;
 	}
 

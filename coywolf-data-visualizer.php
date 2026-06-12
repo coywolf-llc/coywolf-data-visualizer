@@ -3,7 +3,7 @@
  * Plugin Name:       Coywolf Data Visualizer
  * Plugin URI:        https://coywolf.com/notes/coywolf-data-visualizer/
  * Description:       Turn CSV, Excel, and JSON data into Chart.js charts — a built-in analyzer designs them instantly, or connect Claude (optional) for the best results — and embed them anywhere with a block.
- * Version:           1.1.2
+ * Version:           1.2.0
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:            Coywolf
@@ -44,6 +44,7 @@ require_once __DIR__ . '/includes/class-github-updater.php';
 // Flags this as the GitHub distribution (stripped from the WordPress.org build).
 define( 'COYWOLF_CDV_GITHUB_BUILD', true );
 /* wporg-strip:end */
+require_once __DIR__ . '/includes/class-cdv-schemes.php';
 require_once __DIR__ . '/includes/class-cdv-charts.php';
 require_once __DIR__ . '/includes/class-cdv-parser.php';
 require_once __DIR__ . '/includes/class-cdv-heuristics.php';
