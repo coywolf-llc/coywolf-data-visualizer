@@ -513,11 +513,12 @@ final class Coywolf_CDV_Admin {
 				</table>
 				<p class="submit">
 					<button type="submit" class="button button-primary" id="coywolf-cdv-analyze"><?php esc_html_e( 'Analyze', 'coywolf-data-visualizer' ); ?></button>
-					<span class="spinner" id="coywolf-cdv-analyze-spinner"></span>
+					<span class="spinner" id="coywolf-cdv-analyze-spinner" aria-hidden="true"></span>
+					<span id="coywolf-cdv-status" class="screen-reader-text" role="status" aria-live="polite"></span>
 				</p>
 			</form>
 
-			<div class="notice notice-error" id="coywolf-cdv-error" hidden><p></p></div>
+			<div class="notice notice-error" id="coywolf-cdv-error" role="alert" hidden><p></p></div>
 
 			<div id="coywolf-cdv-results" hidden>
 				<h2><?php esc_html_e( 'Suggested charts', 'coywolf-data-visualizer' ); ?></h2>
@@ -595,6 +596,7 @@ final class Coywolf_CDV_Admin {
 				'maxBytes'      => Coywolf_CDV_Parser::MAX_FILE_BYTES,
 				'i18n'          => array(
 					'analyzing'    => __( 'Analyzing your data — this can take a minute…', 'coywolf-data-visualizer' ),
+					'ready'        => __( 'Suggestions ready.', 'coywolf-data-visualizer' ),
 					'tooLarge'     => __( 'That file is larger than the 10 MB limit.', 'coywolf-data-visualizer' ),
 					'noSelection'  => __( 'Select at least one chart to save.', 'coywolf-data-visualizer' ),
 					'requestFail'  => __( 'The request failed. Check your connection and try again.', 'coywolf-data-visualizer' ),
@@ -610,6 +612,7 @@ final class Coywolf_CDV_Admin {
 					'stacked'      => __( 'Stacked', 'coywolf-data-visualizer' ),
 					'beginAtZero'  => __( 'Begin axis at zero', 'coywolf-data-visualizer' ),
 					'hideGrid'     => __( 'Hide grid lines', 'coywolf-data-visualizer' ),
+					'saveChart'    => __( 'Save this chart', 'coywolf-data-visualizer' ),
 				),
 			)
 		);

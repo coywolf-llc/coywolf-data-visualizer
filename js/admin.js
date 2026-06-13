@@ -56,6 +56,7 @@
 	var analyzeButton = document.getElementById( 'coywolf-cdv-analyze' );
 	var analyzeSpinner = document.getElementById( 'coywolf-cdv-analyze-spinner' );
 	var errorBox = document.getElementById( 'coywolf-cdv-error' );
+	var statusBox = document.getElementById( 'coywolf-cdv-status' );
 	var results = document.getElementById( 'coywolf-cdv-results' );
 	var suggestionsBox = document.getElementById( 'coywolf-cdv-suggestions' );
 	var saveButton = document.getElementById( 'coywolf-cdv-save' );
@@ -77,7 +78,11 @@
 
 	function setBusy( busy ) {
 		analyzeButton.disabled = busy;
+		analyzeButton.setAttribute( 'aria-busy', busy ? 'true' : 'false' );
 		analyzeSpinner.classList.toggle( 'is-active', busy );
+		if ( statusBox ) {
+			statusBox.textContent = busy ? ( i18n.analyzing || '' ) : '';
+		}
 	}
 
 	function destroyCards() {
@@ -156,6 +161,7 @@
 		var checkbox = document.createElement( 'input' );
 		checkbox.type = 'checkbox';
 		checkbox.checked = true;
+		checkbox.setAttribute( 'aria-label', ( i18n.saveChart || 'Save this chart' ) + ' (' + suggestion.type + ')' );
 		header.appendChild( checkbox );
 		var typeBadge = document.createElement( 'code' );
 		typeBadge.textContent = suggestion.type;
@@ -337,6 +343,11 @@
 			} )
 			.finally( function () {
 				setBusy( false );
+				// setBusy() clears the status node; announce the ready state
+				// afterwards when results were successfully revealed.
+				if ( statusBox && ! results.hidden ) {
+					statusBox.textContent = i18n.ready || '';
+				}
 			} );
 	} );
 

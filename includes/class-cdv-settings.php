@@ -144,6 +144,17 @@ final class Coywolf_CDV_Settings {
 	}
 
 	public function register() {
+		// The API key is read only in admin/AJAX contexts (Coywolf_CDV_AI::api_key()/key_status()),
+		// never on the front end or REST. Keep it out of the autoloaded alloptions payload.
+		if ( false === get_option( self::KEY_OPTION, false ) ) {
+			// Row doesn't exist yet — create it with autoload disabled so register_setting()'s
+			// default-autoload behavior never applies on first save.
+			add_option( self::KEY_OPTION, '', '', 'no' );
+		} elseif ( function_exists( 'wp_set_option_autoload' ) ) {
+			// WP 6.6+: migrate an existing autoloaded row to autoload=off (idempotent).
+			wp_set_option_autoload( self::KEY_OPTION, false );
+		}
+
 		register_setting(
 			self::GROUP,
 			self::KEY_OPTION,
