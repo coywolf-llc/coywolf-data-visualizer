@@ -16,6 +16,8 @@ Coywolf Data Visualizer turns data files into Chart.js charts. Out of the box it
 
 Connect a Claude API key (optional) and Claude designs the charts instead: it reads your data and your plain-language explanation, picks the most insightful angles, aggregates intelligently, and writes real takeaway captions. Either way you review live previews, edit the titles and captions, and save the charts you want to keep.
 
+The Claude API key can be saved in the database or, for better security, defined as the `ANTHROPIC_API_KEY` constant in `wp-config.php` (or an environment variable). The Settings page shows where the active key comes from and confirms when it's configured.
+
 Saved charts are reusable: embed the same chart in any number of posts and pages, and the All Charts screen shows you exactly where each one is used.
 
 Features:

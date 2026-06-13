@@ -29,16 +29,60 @@ final class Coywolf_CDV_AI {
 	 * @return string
 	 */
 	public function api_key() {
-		return (string) get_option( 'coywolf_cdv_api_key', '' );
+		$key = (string) get_option( 'coywolf_cdv_api_key', '' );
+		if ( '' !== $key ) {
+			return $key;
+		}
+		if ( defined( 'ANTHROPIC_API_KEY' ) && '' !== (string) ANTHROPIC_API_KEY ) {
+			return (string) ANTHROPIC_API_KEY;
+		}
+		$env = getenv( 'ANTHROPIC_API_KEY' );
+		return ( is_string( $env ) && '' !== $env ) ? $env : '';
 	}
 
 	/**
-	 * Whether a key is saved.
+	 * Whether a key is configured anywhere (saved, wp-config constant, or env).
 	 *
 	 * @return bool
 	 */
 	public function is_configured() {
 		return '' !== $this->api_key();
+	}
+
+	/**
+	 * Where the active API key comes from, for the Settings indicator. Mirrors
+	 * api_key()'s precedence: a saved key wins over the wp-config constant,
+	 * which wins over the environment variable.
+	 *
+	 * @return array {
+	 *     @type string $source   Active source: 'saved'|'constant'|'env'|'' (none).
+	 *     @type bool   $saved    A key is saved in the database.
+	 *     @type bool   $constant ANTHROPIC_API_KEY is defined in wp-config.php.
+	 *     @type bool   $env      ANTHROPIC_API_KEY is set as an environment variable.
+	 * }
+	 */
+	public function key_status() {
+		$saved    = '' !== (string) get_option( 'coywolf_cdv_api_key', '' );
+		$constant = defined( 'ANTHROPIC_API_KEY' ) && '' !== (string) ANTHROPIC_API_KEY;
+		$env_val  = getenv( 'ANTHROPIC_API_KEY' );
+		$env      = is_string( $env_val ) && '' !== $env_val;
+
+		if ( $saved ) {
+			$source = 'saved';
+		} elseif ( $constant ) {
+			$source = 'constant';
+		} elseif ( $env ) {
+			$source = 'env';
+		} else {
+			$source = '';
+		}
+
+		return array(
+			'source'   => $source,
+			'saved'    => $saved,
+			'constant' => $constant,
+			'env'      => $env,
+		);
 	}
 
 	/**
