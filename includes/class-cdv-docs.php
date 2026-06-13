@@ -24,6 +24,9 @@ final class Coywolf_CDV_Docs {
 	 * Output the Documentation admin page.
 	 */
 	public static function render_page() {
+		if ( ! current_user_can( Coywolf_Data_Visualizer::CAPABILITY ) ) {
+			return;
+		}
 		echo '<div class="wrap coywolf-cdv-docs">';
 
 		$markdown = self::read_readme();

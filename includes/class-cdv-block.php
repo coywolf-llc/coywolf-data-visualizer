@@ -117,6 +117,39 @@ final class Coywolf_CDV_Block {
 			$aria .= '. ' . $caption;
 		}
 
+		// Build a visually-hidden data table from the config so screen-reader
+		// users get the underlying numbers, not just the title/caption alt text.
+		$table_id = wp_unique_id( 'coywolf-cdv-table-' );
+		$table    = '';
+		$data     = isset( $config['data'] ) && is_array( $config['data'] ) ? $config['data'] : array();
+		$labels   = isset( $data['labels'] ) && is_array( $data['labels'] ) ? $data['labels'] : array();
+		$datasets = isset( $data['datasets'] ) && is_array( $data['datasets'] ) ? $data['datasets'] : array();
+		if ( $labels && $datasets ) {
+			$table = '<table><caption>' . esc_html( $chart['title'] ) . '</caption><thead><tr><th scope="col">' . esc_html__( 'Label', 'coywolf-data-visualizer' ) . '</th>';
+			foreach ( $datasets as $di => $ds ) {
+				$dl     = isset( $ds['label'] ) && '' !== (string) $ds['label'] ? (string) $ds['label'] : sprintf( /* translators: %d: series number */ __( 'Series %d', 'coywolf-data-visualizer' ), $di + 1 );
+				$table .= '<th scope="col">' . esc_html( $dl ) . '</th>';
+			}
+			$table .= '</tr></thead><tbody>';
+			foreach ( $labels as $ri => $label ) {
+				$table .= '<tr><th scope="row">' . esc_html( (string) $label ) . '</th>';
+				foreach ( $datasets as $ds ) {
+					$point = isset( $ds['data'][ $ri ] ) ? $ds['data'][ $ri ] : null;
+					if ( is_scalar( $point ) ) {
+						$val = (string) $point;
+					} elseif ( is_array( $point ) && isset( $point['x'], $point['y'] ) && is_scalar( $point['x'] ) && is_scalar( $point['y'] ) ) {
+						// Scatter/bubble points are {x,y[,r]} objects, not scalars.
+						$val = (string) $point['x'] . ', ' . (string) $point['y'] . ( isset( $point['r'] ) && is_scalar( $point['r'] ) ? ', ' . (string) $point['r'] : '' );
+					} else {
+						$val = '';
+					}
+					$table .= '<td>' . esc_html( $val ) . '</td>';
+				}
+				$table .= '</tr>';
+			}
+			$table .= '</tbody></table>';
+		}
+
 		// The front-end script may not be enqueued yet when the block renders
 		// outside the_content (e.g. in a query loop on an archive) — make sure
 		// it loads whenever a chart is actually output.
@@ -136,8 +169,11 @@ final class Coywolf_CDV_Block {
 		if ( $height > 0 ) {
 			$html .= ' data-coywolf-cdv-fixed-height="1"';
 		}
-		$html .= ' role="img" aria-label="' . esc_attr( $aria ) . '"></canvas>';
+		$html .= ' role="img" aria-label="' . esc_attr( $aria ) . '"' . ( '' !== $table ? ' aria-describedby="' . esc_attr( $table_id ) . '"' : '' ) . '></canvas>';
 		$html .= '</div>';
+		if ( '' !== $table ) {
+			$html .= '<div id="' . esc_attr( $table_id ) . '" class="screen-reader-text">' . $table . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
 		if ( $show_caption && '' !== $caption ) {
 			$html .= '<figcaption class="coywolf-cdv-caption">' . esc_html( $caption ) . '</figcaption>';
 		}

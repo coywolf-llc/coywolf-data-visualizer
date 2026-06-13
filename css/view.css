@@ -24,3 +24,17 @@
 	opacity: 0.75;
 	text-align: center;
 }
+
+/* Visually-hidden data table behind each chart canvas. Core's
+   .screen-reader-text isn't guaranteed on the front end, so scope our own. */
+.coywolf-cdv-chart .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
