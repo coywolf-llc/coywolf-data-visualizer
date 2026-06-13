@@ -268,9 +268,10 @@ final class Coywolf_CDV_Settings {
 		if ( ! current_user_can( Coywolf_Data_Visualizer::CAPABILITY ) ) {
 			return;
 		}
-		$has_key  = $this->ai->is_configured();
-		$settings = $this->get_settings();
-		$models   = $has_key ? $this->ai->models() : array();
+		$has_key    = $this->ai->is_configured();
+		$key_status = $this->ai->key_status();
+		$settings   = $this->get_settings();
+		$models     = $has_key ? $this->ai->models() : array();
 
 		// Make sure the saved/default model is always selectable even when
 		// the live model list is unavailable.
@@ -325,13 +326,78 @@ final class Coywolf_CDV_Settings {
 						<td>
 							<input type="password" class="regular-text" id="coywolf-cdv-api-key"
 								name="<?php echo esc_attr( self::KEY_OPTION ); ?>" value="" autocomplete="off"
-								placeholder="<?php echo esc_attr( $has_key ? __( 'Saved — enter a new key to replace it', 'coywolf-data-visualizer' ) : 'sk-ant-…' ); ?>" />
-							<?php if ( $has_key ) : ?>
+								placeholder="<?php echo esc_attr( $key_status['saved'] ? __( 'Saved — enter a new key to replace it', 'coywolf-data-visualizer' ) : 'sk-ant-…' ); ?>" />
+							<?php if ( $key_status['saved'] ) : ?>
 								<a class="button-link button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=coywolf_cdv_remove_api_key' ), 'coywolf_cdv_remove_api_key' ) ); ?>"><?php esc_html_e( 'Remove', 'coywolf-data-visualizer' ); ?></a>
+							<?php endif; ?>
+							<?php if ( $has_key ) : ?>
 								<button type="button" class="button" id="coywolf-cdv-test-key"><?php esc_html_e( 'Test connection', 'coywolf-data-visualizer' ); ?></button>
 								<span id="coywolf-cdv-test-result" role="status"></span>
 							<?php endif; ?>
-							<p class="description"><?php esc_html_e( 'The key is stored in your WordPress database and is only sent to api.anthropic.com.', 'coywolf-data-visualizer' ); ?></p>
+
+							<?php if ( '' !== $key_status['source'] ) : ?>
+								<p class="coywolf-cdv-key-status coywolf-cdv-key-status--ok">
+									<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
+									<?php
+									if ( 'saved' === $key_status['source'] ) {
+										esc_html_e( 'API key configured — saved in this site.', 'coywolf-data-visualizer' );
+									} elseif ( 'constant' === $key_status['source'] ) {
+										printf(
+											/* translators: %s: constant name. */
+											esc_html__( 'API key configured — using the %s constant from wp-config.php.', 'coywolf-data-visualizer' ),
+											'<code>ANTHROPIC_API_KEY</code>'
+										);
+									} else {
+										printf(
+											/* translators: %s: constant name. */
+											esc_html__( 'API key configured — using the %s environment variable.', 'coywolf-data-visualizer' ),
+											'<code>ANTHROPIC_API_KEY</code>'
+										);
+									}
+									?>
+								</p>
+								<?php if ( 'saved' === $key_status['source'] && ( $key_status['constant'] || $key_status['env'] ) ) : ?>
+									<p class="description">
+										<?php
+										printf(
+											/* translators: %s: constant name. */
+											esc_html__( 'A wp-config %s is also defined, but the saved key above takes precedence. Remove the saved key to use the wp-config value.', 'coywolf-data-visualizer' ),
+											'<code>ANTHROPIC_API_KEY</code>'
+										);
+										?>
+									</p>
+								<?php endif; ?>
+							<?php else : ?>
+								<p class="coywolf-cdv-key-status coywolf-cdv-key-status--none">
+									<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+									<?php esc_html_e( 'No API key configured — the built-in analyzer is used until you add one.', 'coywolf-data-visualizer' ); ?>
+								</p>
+							<?php endif; ?>
+
+							<p class="description">
+								<?php
+								printf(
+									/* translators: %s: constant name. */
+									esc_html__( 'A saved key is stored in your WordPress database and is only sent to api.anthropic.com. For better security you can define %s in wp-config.php instead — see below.', 'coywolf-data-visualizer' ),
+									'<code>ANTHROPIC_API_KEY</code>'
+								);
+								?>
+							</p>
+							<details class="coywolf-cdv-wpconfig">
+								<summary><?php esc_html_e( 'Add the key in wp-config.php instead (recommended)', 'coywolf-data-visualizer' ); ?></summary>
+								<p><?php esc_html_e( 'Keeping the key in wp-config.php instead of the database means a database leak (for example, a stolen backup) can’t expose it. Add this line to wp-config.php, anywhere above the line that reads “/* That’s all, stop editing! Happy publishing. */”:', 'coywolf-data-visualizer' ); ?></p>
+								<pre class="coywolf-cdv-code"><code>define( 'ANTHROPIC_API_KEY', 'sk-ant-...' );</code></pre>
+								<p>
+									<?php
+									printf(
+										/* translators: %s: sk-ant-... placeholder in a code tag. */
+										esc_html__( 'Replace %s with your real key. On most hosts you can edit wp-config.php through the dashboard file manager or over SSH; it sits in the site’s web root, next to wp-admin and wp-content.', 'coywolf-data-visualizer' ),
+										'<code>sk-ant-...</code>'
+									);
+									?>
+								</p>
+								<p><?php esc_html_e( 'The saved key field above takes precedence, so to use the wp-config value leave that field empty (or click Remove). An ANTHROPIC_API_KEY environment variable works the same way if your host lets you set one.', 'coywolf-data-visualizer' ); ?></p>
+							</details>
 						</td>
 					</tr>
 					<tr>
