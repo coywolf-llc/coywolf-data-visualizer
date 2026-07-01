@@ -165,6 +165,15 @@ final class Coywolf_CDV_Settings {
 				'show_in_rest'      => false,
 			)
 		);
+		// The settings blob (model/bg/radius/scheme) is read only in admin +
+		// AI contexts, never on the front end (the block renders from the
+		// chart CPT's own stored config), so keep it out of autoload too.
+		if ( false === get_option( self::OPTION, false ) ) {
+			add_option( self::OPTION, self::defaults(), '', 'no' );
+		} elseif ( function_exists( 'wp_set_option_autoload' ) ) {
+			wp_set_option_autoload( self::OPTION, false );
+		}
+
 		register_setting(
 			self::GROUP,
 			self::OPTION,
