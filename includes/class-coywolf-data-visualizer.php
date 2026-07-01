@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Coywolf_Data_Visualizer {
 
-	const VERSION = '1.3.4';
+	const VERSION = '1.3.5';
 
 	/**
 	 * Capability gating every admin screen and AJAX endpoint.
